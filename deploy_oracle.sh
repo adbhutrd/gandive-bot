@@ -24,6 +24,36 @@ read -p "Admin ID: " ADMIN_ID
 echo -e "${YELLOW}What is your Ko-fi verification token? (Create one in Ko-fi Settings → Webhooks)${NC}"
 read -p "Token (or press Enter to skip): " KOFI_TOKEN
 
+echo -e "${YELLOW}Twitter/X API Key? (optional — press Enter to skip)${NC}"
+read -p "API Key: " TWITTER_KEY
+
+echo -e "${YELLOW}Twitter/X API Secret?${NC}"
+read -p "API Secret: " TWITTER_SECRET
+
+echo -e "${YELLOW}Twitter/X Access Token?${NC}"
+read -p "Access Token: " TWITTER_ACCESS
+
+echo -e "${YELLOW}Twitter/X Access Token Secret?${NC}"
+read -p "Token Secret: " TWITTER_TOKEN_SECRET
+
+echo -e "${YELLOW}SMTP Host? (default: smtp.gmail.com — press Enter to skip)${NC}"
+read -p "SMTP Host: " SMTP_HOST
+SMTP_HOST=${SMTP_HOST:-}
+
+echo -e "${YELLOW}SMTP Port? (default: 587)${NC}"
+read -p "SMTP Port: " SMTP_PORT
+SMTP_PORT=${SMTP_PORT:-587}
+
+echo -e "${YELLOW}SMTP User (email)?${NC}"
+read -p "SMTP User: " SMTP_USER
+
+echo -e "${YELLOW}SMTP Password (app password)?${NC}"
+read -p "SMTP Pass: " SMTP_PASS
+
+echo -e "${YELLOW}Email From address?${NC}"
+read -p "From: " EMAIL_FROM
+EMAIL_FROM=${EMAIL_FROM:-$SMTP_USER}
+
 echo ""
 echo -e "${GREEN}Deploying to $VM_IP...${NC}"
 
@@ -65,6 +95,19 @@ MIN_SIGNAL_CONFIDENCE=60
 KO_FI_URL=https://ko-fi.com/adbhutrd
 WEBHOOK_PORT=5000
 DASHBOARD_PORT=8000
+
+# Twitter/X API (optional - remove # to activate)
+#TWITTER_API_KEY=$TWITTER_KEY
+#TWITTER_API_SECRET=$TWITTER_SECRET
+#TWITTER_ACCESS_TOKEN=$TWITTER_ACCESS
+#TWITTER_ACCESS_TOKEN_SECRET=$TWITTER_TOKEN_SECRET
+
+# SMTP Email (optional - remove # to activate)
+#SMTP_HOST=$SMTP_HOST
+#SMTP_PORT=$SMTP_PORT
+#SMTP_USER=$SMTP_USER
+#SMTP_PASS=$SMTP_PASS
+#EMAIL_FROM=$EMAIL_FROM
 EOF
 chmod 600 ~/gandive-bot/.env"
 
@@ -103,7 +146,15 @@ echo "   - Go to: https://ko-fi.com/manage/webhooks"
 echo "   - Add webhook URL: http://$VM_IP:5000/kofi-webhook"
 echo "   - Set verification token (same as you entered above)"
 echo ""
-echo "5️⃣  SET UP LANDING PAGE:"
+echo "5️⃣  ACTIVATE TWITTER/X (if you provided keys):"
+echo "   ssh ubuntu@$VM_IP \"sed -i 's/^#TWITTER_/TWITTER_/g' ~/gandive-bot/.env && pm2 restart gandive-bot\""
+echo "   Verifies on next scan cycle — auto-posts signals >= 80% confidence"
+echo ""
+echo "6️⃣  ACTIVATE EMAIL NEWSLETTER (if you provided SMTP):"
+echo "   ssh ubuntu@$VM_IP \"sed -i 's/^#SMTP_/SMTP_/g; s/^#EMAIL_FROM/EMAIL_FROM/g' ~/gandive-bot/.env && pm2 restart all\""
+echo "   Sends daily digest to all subscribers automatically"
+echo ""
+echo "7️⃣  SET UP LANDING PAGE:"
 echo "   Deploy to GitHub Pages for the public-facing site:"
 echo "   - Go to github.com/adbhutrd/gandive-bot → Settings → Pages"
 echo "   - Set source to 'main' branch, folder '/website'"
