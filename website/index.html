@@ -8,7 +8,7 @@
   <meta property="og:title" content="GandiveBot — Premium Crypto Trading Signals" />
   <meta property="og:description" content="AI-powered crypto signals on Telegram. Volume spikes, breakouts, whale alerts. Start with Free tier, upgrade for unlimited signals." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://adbhutrd.github.io/gandive-bot/" />
+  <meta property="og:url" content="https://gandivebot.netlify.app/" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -783,8 +783,6 @@
         </p>
         <p id="subscribeMsg" style="color: var(--clr-accent); font-size: 14px; margin-top: 12px; display: none;"></p>
       </div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -888,29 +886,43 @@
       btn.textContent = 'Subscribing...';
       btn.disabled = true;
       try {
-        // Try the webhook server on the deployed VM
-        const res = await fetch('https://api.gandivebot.com/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        if (res.ok) {
+        // Try multiple endpoints in order
+        const endpoints = [
+          '/subscribe',  // Same-origin (if served from bot's webhook server)
+          'https://gandivebot.netlify.app/subscribe',  // Webhook endpoint
+        ];
+        let subscribed = false;
+        for (const url of endpoints) {
+          try {
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+            });
+            if (res.ok) {
+              subscribed = true;
+              break;
+            }
+          } catch {}
+        }
+        
+        if (subscribed) {
           msg.textContent = '✅ Subscribed! Check your inbox for confirmation.';
           showToast('✅ Welcome to GandiveBot!');
         } else {
-          throw new Error('Server error');
+          // Server not reachable - save locally
+          msg.textContent = '📧 We saved your email! Subscribe will activate once the server is live.';
+          showToast('📧 Email saved — you\'re on the list!');
+          const saved = JSON.parse(localStorage.getItem('gandive_emails') || '[]');
+          saved.push({ email, timestamp: new Date().toISOString() });
+          localStorage.setItem('gandive_emails', JSON.stringify(saved));
         }
-      } catch {
-        // Server not deployed yet - capture email locally
-        msg.textContent = '📧 We saved your email! Subscribe will activate once the server is live.';
-        showToast('📧 Email saved — you\'re on the list!');
-        // Save to localStorage so we can sync later
-        const saved = JSON.parse(localStorage.getItem('gandive_emails') || '[]');
-        saved.push({ email, timestamp: new Date().toISOString() });
-        localStorage.setItem('gandive_emails', JSON.stringify(saved));
+      } catch (e) {
+        console.error('Email subscribe error:', e);
+      } finally {
+        btn.textContent = 'Subscribe Free →';
+        btn.disabled = false;
       }
-      btn.textContent = 'Subscribe Free →';
-      btn.disabled = false;
     });
 
     // ─── Toast ───

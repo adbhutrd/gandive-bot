@@ -74,8 +74,10 @@ ssh -o StrictHostKeyChecking=accept-new ubuntu@$VM_IP << 'REMOTE'
     pip install -q -r requirements.txt
 
     echo "🔧 Installing PM2..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt-get install -y -qq nodejs
+    if ! command -v node &> /dev/null; then
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+        sudo apt-get install -y -qq nodejs
+    fi
     sudo npm install -g pm2
 
     echo "" > .env
@@ -97,10 +99,10 @@ WEBHOOK_PORT=5000
 DASHBOARD_PORT=8000
 
 # Twitter/X API (optional - remove # to activate)
-#TWITTER_API_KEY=$TWITTER_KEY
-#TWITTER_API_SECRET=$TWITTER_SECRET
-#TWITTER_ACCESS_TOKEN=$TWITTER_ACCESS
-#TWITTER_ACCESS_TOKEN_SECRET=$TWITTER_TOKEN_SECRET
+TWITTER_API_KEY=$TWITTER_KEY
+TWITTER_API_SECRET=$TWITTER_SECRET
+TWITTER_ACCESS_TOKEN=$TWITTER_ACCESS
+TWITTER_ACCESS_TOKEN_SECRET=$TWITTER_TOKEN_SECRET
 
 # SMTP Email (optional - remove # to activate)
 #SMTP_HOST=$SMTP_HOST
@@ -164,19 +166,19 @@ echo "   OR serve the website from your VM for email subscribe to work:"
 echo "   - The webhook server handles email signups at http://$VM_IP:5000/subscribe"
 echo "   - Update the landing page JS to POST to http://$VM_IP:5000/subscribe"
 echo ""
-echo "6️⃣  TEST THE BOT:"
+echo "8️⃣  TEST THE BOT:"
 echo "   - Open Telegram and message @GandiveBot"
 echo "   - Send /start to see commands (referral deep links work!)"
 echo "   - Send /signals to get your first signals"
 echo "   - Send /perf to see signal win rate"
 echo "   - Send /referral to get your referral link"
 echo ""
-echo "7️⃣  TEST PREMIUM:"
+echo "9️⃣  TEST PREMIUM:"
 echo "   - Send /addpremium YOUR_ID 30 to test premium"
 echo "   - Then /signals again (should show unlimited)"
 echo "   - Test /report for detailed performance (premium only)"
 echo ""
-echo "8️⃣  MONITORING:"
+echo "🔟  MONITORING:"
 echo "  pm2 logs gandive-bot       # Bot logs"
 echo "  pm2 logs gandive-webhook   # Webhook logs (payments)"
 echo "  pm2 logs gandive-dashboard # Dashboard logs"

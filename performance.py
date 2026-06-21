@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 
+# Imported lazily inside auto_resolve_signals to avoid circular import
+
 logger = logging.getLogger("gandive-performance")
 
 BASE_DIR = Path(__file__).parent.resolve()

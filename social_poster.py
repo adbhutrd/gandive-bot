@@ -30,6 +30,14 @@ logger = logging.getLogger("gandive-social")
 BASE_DIR = Path(__file__).parent.resolve()
 SOCIAL_STATE_FILE = BASE_DIR / "social_state.json"
 
+# Attempt import of OAuth1 — gracefully degrade if missing
+_has_oauth = False
+try:
+    from requests_oauthlib import OAuth1
+    _has_oauth = True
+except ImportError:
+    logger.warning("requests_oauthlib not installed. Twitter posting disabled. Install: pip install requests-oauthlib")
+
 # ─── State tracking (avoid double-posting) ───────────────────────
 
 def _load_state() -> dict:
@@ -93,61 +101,9 @@ def generate_tweet(signal) -> Optional[str]:
 
 # ─── Twitter API ──────────────────────────────────────────────────
 
-def _twitter_api(method: str, endpoint: str, params: dict = None, json_body: dict = None) -> Optional[dict]:
-    """Make a request to Twitter API v2."""
-    import requests
-    import hashlib
-    import hmac
-    import base64
-    from urllib.parse import urlencode
-    
-    api_key = os.getenv("TWITTER_API_KEY")
-    api_secret = os.getenv("TWITTER_API_SECRET")
-    access_token = os.getenv("TWITTER_ACCESS_TOKEN")
-    token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
-    
-    if not all([api_key, api_secret, access_token, token_secret]):
-        logger.warning("Twitter API keys not configured")
-        return None
-    
-    url = f"https://api.twitter.com/2/{endpoint}"
-    
-    # Simple OAuth 1.0a header (using Bearer token approach for simplicity)
-    # In production, use tweepy or proper OAuth 1.0a signing
-    try:
-        # Use Twitter API v2 with OAuth 2.0 Bearer token
-        # Generate Bearer token from API key + secret
-        bearer_token_raw = base64.b64encode(f"{api_key}:{api_secret}".encode()).decode()
-        # This is simplified - proper OAuth requires a token endpoint call
-        
-        headers = {
-            "Authorization": f"Bearer {access_token}",  # Simplified
-            "Content-Type": "application/json",
-        }
-        
-        if method == "GET":
-            r = requests.get(url, headers=headers, params=params, timeout=10)
-        else:
-            r = requests.post(url, headers=headers, json=json_body, timeout=10)
-        
-        if r.status_code in (200, 201):
-            return r.json()
-        else:
-            logger.warning(f"Twitter API error ({r.status_code}): {r.text[:200]}")
-            return None
-    except Exception as e:
-        logger.error(f"Twitter API request failed: {e}")
-        return None
-
-
 def _post_tweet_v1(text: str) -> bool:
-    """Post a tweet using Twitter API v1.1 (more reliable approach)."""
+    """Post a tweet using Twitter API v1.1 with OAuth 1.0a."""
     import requests
-    import hashlib
-    import hmac
-    import base64
-    import time as time_module
-    from urllib.parse import quote
     
     api_key = os.getenv("TWITTER_API_KEY")
     api_secret = os.getenv("TWITTER_API_SECRET")
@@ -157,9 +113,11 @@ def _post_tweet_v1(text: str) -> bool:
     if not all([api_key, api_secret, access_token, token_secret]):
         return False
     
-    # Use requests-oauthlib if available, otherwise simplified POST
+    if not _has_oauth:
+        logger.warning("Cannot tweet: requests_oauthlib not installed")
+        return False
+    
     try:
-        from requests_oauthlib import OAuth1
         auth = OAuth1(api_key, api_secret, access_token, token_secret)
         r = requests.post(
             "https://api.twitter.com/1.1/statuses/update.json",
@@ -173,9 +131,6 @@ def _post_tweet_v1(text: str) -> bool:
         else:
             logger.warning(f"Tweet failed ({r.status_code}): {r.text[:200]}")
             return False
-    except ImportError:
-        logger.warning("requests_oauthlib not installed. Install: pip install requests_oauthlib")
-        return False
     except Exception as e:
         logger.error(f"Tweet post error: {e}")
         return False

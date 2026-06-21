@@ -872,13 +872,23 @@ def start_polling():
     scanner_thread.start()
     logger.info("🔄 Background scanner started")
 
-    # Notify admin
-    send_alert_to_admin(
-        f"🤖 <b>{BOT_NAME} is ONLINE</b>\n"
-        f"Version: {BOT_VERSION}\n"
-        f"Scanning {len(DEFAULT_PAIRS)} pairs every {SCAN_INTERVAL}s\n"
-        f"💎 Premium system active"
-    )
+    # Notify admin (skip if admin ID matches bot ID to avoid 403 error)
+    if ADMIN_ID and BOT_TOKEN:
+        try:
+            bot_id_from_token = int(BOT_TOKEN.split(":")[0])
+            is_bot_self = (bot_id_from_token == ADMIN_ID)
+        except (ValueError, IndexError):
+            is_bot_self = False
+        
+        if is_bot_self:
+            logger.info("Admin ID matches bot ID — skipping admin notification")
+        else:
+            send_alert_to_admin(
+                f"🤖 <b>{BOT_NAME} is ONLINE</b>\n"
+                f"Version: {BOT_VERSION}\n"
+                f"Scanning {len(DEFAULT_PAIRS)} pairs every {SCAN_INTERVAL}s\n"
+                f"💎 Premium system active"
+            )
 
     while True:
         try:

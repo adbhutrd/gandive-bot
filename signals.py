@@ -26,7 +26,7 @@ logger = logging.getLogger("gandive-signals")
 DEFAULT_PAIRS = [
     "BTC/USDT", "ETH/USDT", "SOL/USDT", "DOGE/USDT", "PEPE/USDT",
     "WIF/USDT", "BONK/USDT", "SHIB/USDT", "XRP/USDT", "ADA/USDT",
-    "AVAX/USDT", "DOT/USDT", "LINK/USDT", "MATIC/USDT", "ARB/USDT",
+    "AVAX/USDT", "DOT/USDT", "LINK/USDT", "POL/USDT", "ARB/USDT",
     "OP/USDT", "INJ/USDT", "TIA/USDT", "SEI/USDT", "SUI/USDT",
 ]
 
@@ -127,48 +127,35 @@ class Signal:
 
 
 # ─── Multi-Exchange Support ─────────────────────────────────────
-# Falls back through exchanges if one is unavailable/blocked
+# Falls back through exchanges if one is unavailable/blocked.
+# Exchange ordering: fastest/most reliable first, each request
+# handles its own errors gracefully so no pre-flight check needed.
 
 EXCHANGES = []
 
 
-def _check_exchange_api(name: str, url: str, timeout: int = 5) -> bool:
-    """Check if an exchange API is reachable."""
-    try:
-        r = requests.get(url, timeout=timeout)
-        return r.status_code == 200
-    except Exception:
-        return False
-
-
 def _init_exchanges():
-    """Initialize exchange list based on reachability."""
+    """Initialize exchange list with prioritised order.
+    
+    Binance is the most reliable public API — placed first.
+    MEXC, Gate.io, and KuCoin are solid alternatives.
+    CoinGecko is the last resort (price-only, no klines on free tier).
+    Each fetch request handles timeouts/errors individually.
+    """
     global EXCHANGES
     if EXCHANGES:
         return
 
-    exchanges_to_try = [
-        ("mexc", MEXC_TICKER, _mexc_ticker, _mexc_klines),
-        ("gateio", GATE_TICKER, _gate_ticker, _gate_klines),
-        ("kucoin", KUCKOIN_TICKER, _kucoin_ticker, _kucoin_klines),
-        ("coingecko", COINGECKO_SIMPLE, _coingecko_ticker, None),
-        ("binance", BINANCE_TICKER, _binance_ticker, _binance_klines),
+    EXCHANGES = [
+        (_binance_ticker, _binance_klines),
+        (_mexc_ticker, _mexc_klines),
+        (_gate_ticker, _gate_klines),
+        (_kucoin_ticker, _kucoin_klines),
+        (_coingecko_ticker, None),
     ]
-
-    available = []
-    for name, url, ticker_fn, klines_fn in exchanges_to_try:
-        if _check_exchange_api(name, url):
-            available.append((ticker_fn, klines_fn))
-            logger.info(f"✅ Exchange available: {name}")
-        else:
-            logger.warning(f"❌ Exchange unavailable: {name}")
-
-    if not available:
-        # Default to all — let each request handle errors
-        for _, _, ticker_fn, klines_fn in exchanges_to_try:
-            available.append((ticker_fn, klines_fn))
-
-    EXCHANGES = available
+    logger.info(f"🌐 Multi-exchange fallback enabled ({len(EXCHANGES)} exchanges)")
+    for name in ["Binance", "MEXC", "Gate.io", "KuCoin", "CoinGecko"]:
+        logger.debug(f"  • {name}")
 
 
 # ─── Exchange: MEXC (public, no key needed) ────────────────────

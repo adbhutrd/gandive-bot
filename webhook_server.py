@@ -125,6 +125,10 @@ class KoFiHandler(BaseHTTPRequestHandler):
         """Handle Ko-fi webhook POST."""
         path = urlparse(self.path).path
         
+        # Read body first (needed by all POST handlers)
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length)
+        
         if path == "/subscribe":
             self._handle_subscribe(body)
             return
@@ -134,10 +138,6 @@ class KoFiHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'{"error": "Not found"}')
             return
-        
-        # Read body
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length)
         
         # Ko-fi sends form-encoded data in a 'data' field
         try:

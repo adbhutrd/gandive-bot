@@ -15,7 +15,8 @@ StandardError=append:/home/enishshah2/gandive_bot/logs/bot.error.log
 
 # Security hardening
 NoNewPrivileges=true
-ProtectSystem=full
+ProtectSystem=strict
+ReadWritePaths=/home/enishshah2/gandive_bot
 ProtectHome=false
 
 [Install]

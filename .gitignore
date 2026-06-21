@@ -1,24 +1,34 @@
-# Environment
+# ─── Environment ───
 .env
-
-# Virtual environment
 venv/
-.venv/
+.env.local
 
-# Python cache
+# ─── Python ───
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
 
-# Logs
+# ─── Logs ───
 *.log
+bot.log
+email_drafts/
 logs/
 
-# Runtime data
-premium_users.json
-bot_state.json
-signal_cache.json
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# OS files
+# ─── OS ───
 .DS_Store
 Thumbs.db
+
+# ─── Data (auto-generated) ───
+signal_performance.json
+referral_data.json
+email_subscribers.json
