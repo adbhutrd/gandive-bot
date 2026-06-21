@@ -144,7 +144,9 @@ def send_alert_to_admin(message: str):
         telegram_send(ADMIN_ID, f"<b>🤖 GandiveBot Alert</b>\n\n{message}")
 
 
-# ─── Command Handlers ─────────────────────────────────────────────def cmd_start(chat_id: int, user_id: int, args: List[str] = None):
+# ─── Command Handlers ─────────────────────────────────────────────
+
+def cmd_start(chat_id: int, user_id: int, args: List[str] = None):
     """Welcome message with bot overview. Handles referral deep links."""
     
     # Check for referral code (format: /start ref_CODE)
