@@ -14,7 +14,7 @@
 | 🌐 **Tunnel** | HTTPS for webhook | `bash startup.sh` |
 | 📰 **AISAMACHAR** | AI news bot with subscribers | Auto-starts via PM2 |
 | 🌍 **Landing Page** | `adbhutrd.github.io/gandive-bot/` | Already live |
-| 💼 **AI Automation Pro** | `adbhutrd.github.io/ai-automation-pro/` | Enable Pages in settings |
+| 💼 **AI Automation Pro** | `adbhutrd.github.io/ai-automation-pro/` | Enable at https://github.com/adbhutrd/ai-automation-pro/settings/pages (main → /) |
 
 ---
 
