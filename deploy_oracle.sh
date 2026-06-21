@@ -21,10 +21,12 @@ read -p "Token: " BOT_TOKEN
 echo -e "${YELLOW}What is your Telegram admin user ID?${NC}"
 read -p "Admin ID: " ADMIN_ID
 
+echo -e "${YELLOW}What is your Ko-fi verification token? (Create one in Ko-fi Settings → Webhooks)${NC}"
+read -p "Token (or press Enter to skip): " KOFI_TOKEN
+
 echo ""
 echo -e "${GREEN}Deploying to $VM_IP...${NC}"
 
-# Create deploy commands for the remote server
 ssh -o StrictHostKeyChecking=accept-new ubuntu@$VM_IP << 'REMOTE'
     set -e
     echo "📦 Updating system..."
@@ -49,10 +51,11 @@ ssh -o StrictHostKeyChecking=accept-new ubuntu@$VM_IP << 'REMOTE'
     echo "" > .env
 REMOTE
 
-# Send env vars securely via SSH
+# Send env vars securely
 ssh ubuntu@$VM_IP "cat > ~/gandive-bot/.env << 'EOF'
 GANDIVE_BOT_TOKEN=$BOT_TOKEN
 ADMIN_USER_ID=$ADMIN_ID
+KO_FI_VERIFICATION_TOKEN=${KOFI_TOKEN:-}
 BOT_NAME=GandiveBot
 BOT_USERNAME=GandiveBot
 SCAN_INTERVAL=300
@@ -60,17 +63,55 @@ VOLUME_SPIKE_MULTIPLIER=3.0
 PRICE_BREAKOUT_PCT=0.05
 MIN_SIGNAL_CONFIDENCE=60
 KO_FI_URL=https://ko-fi.com/adbhutrd
+WEBHOOK_PORT=5000
 EOF
 chmod 600 ~/gandive-bot/.env"
 
-# Start the bot with PM2
-ssh ubuntu@$VM_IP "cd ~/gandive-bot && source venv/bin/activate && pm2 start bot.py --interpreter python3 --name gandive-bot && pm2 save && pm2 startup"
+# Launch both bot and webhook with PM2
+ssh ubuntu@$VM_IP "cd ~/gandive-bot && source venv/bin/activate && \
+pm2 start bot.py --interpreter python3 --name gandive-bot && \
+pm2 start webhook_server.py --interpreter python3 --name gandive-webhook && \
+pm2 save && \
+pm2 startup"
+
+# Open webhook port in firewall
+ssh ubuntu@$VM_IP "sudo ufw allow 5000/tcp 2>/dev/null || true"
 
 echo -e "${GREEN}✅ Deployment complete!${NC}"
 echo ""
-echo "Bot is running 24/7 on Oracle Cloud!"
+echo "╔═══════════════════════════════════════════════════════╗"
+echo "║   📋 POST-DEPLOYMENT CHECKLIST                      ║"
+echo "╚═══════════════════════════════════════════════════════╝"
+echo ""
+echo "1️⃣  CHECK BOT IS RUNNING:"
+echo "   ssh ubuntu@$VM_IP 'pm2 status'"
+echo ""
+echo "2️⃣  CHECK LOGS:"
+echo "   ssh ubuntu@$VM_IP 'pm2 logs gandive-bot --lines 20'"
+echo ""
+echo "3️⃣  SET UP KO-FI WEBHOOK:"
+echo "   - Go to: https://ko-fi.com/manage/webhooks"
+echo "   - Add webhook URL: http://$VM_IP:5000/kofi-webhook"
+echo "   - Set verification token (same as you entered above)"
+echo ""
+echo "4️⃣  SET UP LANDING PAGE:"
+echo "   The website is at gandive_bot/website/index.html"
+echo "   Deploy to GitHub Pages:"
+echo "   - Go to github.com/adbhutrd/gandive-bot → Settings → Pages"
+echo "   - Set source to 'main' branch, folder '/website'"
+echo "   - Your page will be at: https://adbhutrd.github.io/gandive-bot/"
+echo ""
+echo "5️⃣  TEST THE BOT:"
+echo "   - Open Telegram and message @GandiveBot"
+echo "   - Send /start to see commands"
+echo "   - Send /signals to get your first signals"
+echo ""
+echo "6️⃣  TEST PREMIUM:"
+echo "   - Send /addpremium YOUR_ID 30 to test premium"
+echo "   - Then /signals again (should show unlimited)"
 echo ""
 echo "Commands:"
-echo "  Check logs: pm2 logs gandive-bot"
-echo "  Restart:    pm2 restart gandive-bot"
-echo "  Monitor:    pm2 monit"
+echo "  pm2 logs gandive-bot     # Bot logs"
+echo "  pm2 logs gandive-webhook # Webhook logs"
+echo "  pm2 monit                # CPU/RAM dashboard"
+echo "  pm2 restart all          # Restart both processes"
