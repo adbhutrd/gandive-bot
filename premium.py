@@ -30,16 +30,20 @@ logger = logging.getLogger("gandive-premium")
 
 def _lock_file(fd, exclusive: bool = True):
     """Lock file. Exclusive for writes, shared for reads."""
+    if fcntl is None:
+        return  # Windows: no file locking available
     try:
         fcntl.flock(fd, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
-    except Exception:
-        pass  # Non-blocking on systems without flock (Windows)
+    except (AttributeError, OSError):
+        pass  # Non-blocking on systems without flock
 
 def _unlock_file(fd):
     """Unlock file."""
+    if fcntl is None:
+        return  # Windows: no file locking available
     try:
         fcntl.flock(fd, fcntl.LOCK_UN)
-    except Exception:
+    except (AttributeError, OSError):
         pass
 
 # ─── File Paths ───────────────────────────────────────────────────
@@ -360,9 +364,8 @@ def cleanup_expired():
 
 # ─── Payment Links ────────────────────────────────────────────────
 
-# Update this to your Ko-fi page
-KO_FI_URL = "https://ko-fi.com/adbhutrd"
-KO_FI_NAME = "Adbhut_RD"
+KO_FI_URL = os.getenv("KO_FI_URL", "https://ko-fi.com/adbhutrd")
+KO_FI_NAME = os.getenv("KO_FI_NAME", "Adbhut_RD")
 
 def get_subscribe_message() -> str:
     """Get formatted subscription message with payment links."""

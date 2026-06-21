@@ -40,7 +40,7 @@ from dotenv import load_dotenv
 from premium import (
     add_premium_user, remove_premium_user, get_user_tier,
     get_premium_users_list, get_premium_stats, get_subscribe_message,
-    get_signal_delay, get_signal_pairs, check_rate_limit,
+    get_signal_delay, check_rate_limit,
     increment_signal_usage, increment_signal_count,
     get_active_user_ids, get_user_info,
     cleanup_expired, save_state,
@@ -51,7 +51,7 @@ from signals import (
 )
 from performance import (
     get_performance_stats, get_performance_message, get_detailed_report,
-    record_signal, report_outcome, auto_resolve_signals,
+    record_signal, auto_resolve_signals,
 )
 from referral import (
     generate_referral_code, apply_referral, get_referral_stats,
@@ -649,6 +649,7 @@ def cmd_broadcast(chat_id: int, user_id: int, args: List[str]):
 
 # Track previously pushed signal hashes to avoid sending duplicates
 _signal_dedup_cache: Dict[str, float] = {}
+_signal_dedup_lock = threading.Lock()
 _DEDUP_TTL = 3600  # Don't repeat same signal within 1 hour
 
 
@@ -658,14 +659,15 @@ def _is_duplicate_signal(signal: Signal) -> bool:
     h = signal.get_signal_hash()
     now = time.time()
     
-    # Clean old entries
-    _signal_dedup_cache = {k: v for k, v in _signal_dedup_cache.items() if now - v < _DEDUP_TTL}
-    
-    if h in _signal_dedup_cache:
-        return True
-    
-    _signal_dedup_cache[h] = now
-    return False
+    with _signal_dedup_lock:
+        # Clean old entries
+        _signal_dedup_cache = {k: v for k, v in _signal_dedup_cache.items() if now - v < _DEDUP_TTL}
+        
+        if h in _signal_dedup_cache:
+            return True
+        
+        _signal_dedup_cache[h] = now
+        return False
 
 
 # ─── Background Signal Scanner ────────────────────────────────────

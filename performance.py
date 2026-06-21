@@ -324,7 +324,7 @@ def _get_profit_factor(resolved: List[dict]) -> float:
     gross_wins = sum(r.get("pnl_percentage", 0) or 0 for r in resolved if r.get("pnl_percentage", 0) or 0 > 0)
     gross_losses = abs(sum(r.get("pnl_percentage", 0) or 0 for r in resolved if r.get("pnl_percentage", 0) or 0 < 0))
     if gross_losses == 0:
-        return float('inf') if gross_wins > 0 else 0
+        return 999.99 if gross_wins > 0 else 0  # high but finite number for JSON safety
     return round(gross_wins / gross_losses, 2)
 
 

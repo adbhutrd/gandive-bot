@@ -127,6 +127,9 @@ HTML = """<!DOCTYPE html>
   </div>
 
   <script>
+    let winRateChartInstance = null;
+    let signalTypeChartInstance = null;
+
     async function loadData() {
       try {
         const res = await fetch('/api/data');
@@ -150,8 +153,12 @@ HTML = """<!DOCTYPE html>
         <div class="card"><h3>Profit Factor</h3><div class="value ${(data.performance.profit_factor || 0) >= 1.5 ? 'green' : 'orange'}">${data.performance.profit_factor || 0}x</div><div class="sub">${(data.performance.profit_factor || 0) >= 1.5 ? 'Profitable' : 'Needs improvement'}</div></div>
       `;
 
+      // Destroy old chart instances to prevent memory leaks
+      if (winRateChartInstance) winRateChartInstance.destroy();
+      if (signalTypeChartInstance) signalTypeChartInstance.destroy();
+
       // Win rate chart
-      new Chart(document.getElementById('winRateChart'), {
+      winRateChartInstance = new Chart(document.getElementById('winRateChart'), {
         type: 'doughnut',
         data: {
           labels: ['Wins', 'Losses', 'Breakeven'],
@@ -173,7 +180,7 @@ HTML = """<!DOCTYPE html>
       const srcData = srcLabels.map(s => sources[s].signals);
       const srcColors = { volume_spike: '#22c55e', breakout: '#f7931a', momentum: '#8b5cf6', whale: '#ef4444' };
 
-      new Chart(document.getElementById('signalTypeChart'), {
+      signalTypeChartInstance = new Chart(document.getElementById('signalTypeChart'), {
         type: 'bar',
         data: {
           labels: srcLabels.map(s => s.replace('_', ' ').replace('\\b(\\w)', c => c.toUpperCase())),

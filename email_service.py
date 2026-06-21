@@ -21,6 +21,7 @@ import os
 import json
 import time
 import logging
+import html
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -155,6 +156,11 @@ def _save_email_draft(to_email: str, subject: str, html_body: str):
 
 # ─── Email Templates ──────────────────────────────────────────────
 
+def _escape_html(text: str) -> str:
+    """Escape HTML entities to prevent injection in email templates."""
+    return html.escape(text or "")
+
+
 def build_daily_digest(signals: list, performance: dict = None) -> str:
     """Build a daily signal digest HTML email."""
     now = datetime.now().strftime("%B %d, %Y")
@@ -163,18 +169,22 @@ def build_daily_digest(signals: list, performance: dict = None) -> str:
     signal_items = ""
     for s in signals[:5]:
         emoji = {"BUY": "🟢", "SELL": "🔴", "WHALE": "🐋", "MOMENTUM": "⚡"}.get(s.get("type", ""), "📊")
+        pair = _escape_html(s.get("pair", "N/A"))
+        sig_type = _escape_html(s.get("type", ""))
+        reason = _escape_html(s.get("reason", "")[:60])
+        price = s.get("price", 0)
         signal_items += f"""
         <tr>
           <td style="padding:12px;border-bottom:1px solid #2a2a3a;">
             <span style="font-size:18px;">{emoji}</span>
-            <strong style="color:#e8e8f0;margin-left:8px;">{s.get('pair', 'N/A')}</strong>
-            <span style="color:{'#22c55e' if s.get('type') in ('BUY','MOMENTUM') else '#ef4444'};margin-left:8px;">{s.get('type', '')}</span>
+            <strong style="color:#e8e8f0;margin-left:8px;">{pair}</strong>
+            <span style="color:{'#22c55e' if s.get('type') in ('BUY','MOMENTUM') else '#ef4444'};margin-left:8px;">{sig_type}</span>
           </td>
           <td style="padding:12px;border-bottom:1px solid #2a2a3a;color:#e8e8f0;">
-            ${s.get('price', 0):,.4f}
+            ${price:,.4f}
           </td>
           <td style="padding:12px;border-bottom:1px solid #2a2a3a;color:#8888a0;font-size:13px;">
-            {s.get('reason', '')[:60]}
+            {reason}
           </td>
         </tr>"""
 
