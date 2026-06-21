@@ -64,18 +64,20 @@ PRICE_BREAKOUT_PCT=0.05
 MIN_SIGNAL_CONFIDENCE=60
 KO_FI_URL=https://ko-fi.com/adbhutrd
 WEBHOOK_PORT=5000
+DASHBOARD_PORT=8000
 EOF
 chmod 600 ~/gandive-bot/.env"
 
-# Launch both bot and webhook with PM2
+# Launch all processes with PM2
 ssh ubuntu@$VM_IP "cd ~/gandive-bot && source venv/bin/activate && \
 pm2 start bot.py --interpreter python3 --name gandive-bot && \
 pm2 start webhook_server.py --interpreter python3 --name gandive-webhook && \
+pm2 start dashboard.py --interpreter python3 --name gandive-dashboard && \
 pm2 save && \
 pm2 startup"
 
-# Open webhook port in firewall
-ssh ubuntu@$VM_IP "sudo ufw allow 5000/tcp 2>/dev/null || true"
+# Open ports in firewall
+ssh ubuntu@$VM_IP "sudo ufw allow 5000/tcp 2>/dev/null || true && sudo ufw allow 8000/tcp 2>/dev/null || true"
 
 echo -e "${GREEN}✅ Deployment complete!${NC}"
 echo ""
@@ -83,35 +85,57 @@ echo "╔═══════════════════════�
 echo "║   📋 POST-DEPLOYMENT CHECKLIST                      ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 echo ""
-echo "1️⃣  CHECK BOT IS RUNNING:"
+echo "1️⃣  CHECK ALL PROCESSES ARE RUNNING:"
 echo "   ssh ubuntu@$VM_IP 'pm2 status'"
+echo "   Should show: gandive-bot, gandive-webhook, gandive-dashboard"
 echo ""
 echo "2️⃣  CHECK LOGS:"
 echo "   ssh ubuntu@$VM_IP 'pm2 logs gandive-bot --lines 20'"
+echo "   ssh ubuntu@$VM_IP 'pm2 logs gandive-webhook --lines 10'"
+echo "   ssh ubuntu@$VM_IP 'pm2 logs gandive-dashboard --lines 10'"
 echo ""
-echo "3️⃣  SET UP KO-FI WEBHOOK:"
+echo "3️⃣  ACCESS DASHBOARD:"
+echo "   http://$VM_IP:8000/ — Live signals, charts, performance stats"
+echo "   http://$VM_IP:8000/api/data — JSON API for developers"
+echo ""
+echo "4️⃣  SET UP KO-FI WEBHOOK:"
 echo "   - Go to: https://ko-fi.com/manage/webhooks"
 echo "   - Add webhook URL: http://$VM_IP:5000/kofi-webhook"
 echo "   - Set verification token (same as you entered above)"
 echo ""
-echo "4️⃣  SET UP LANDING PAGE:"
-echo "   The website is at gandive_bot/website/index.html"
-echo "   Deploy to GitHub Pages:"
+echo "5️⃣  SET UP LANDING PAGE:"
+echo "   Deploy to GitHub Pages for the public-facing site:"
 echo "   - Go to github.com/adbhutrd/gandive-bot → Settings → Pages"
 echo "   - Set source to 'main' branch, folder '/website'"
 echo "   - Your page will be at: https://adbhutrd.github.io/gandive-bot/"
 echo ""
-echo "5️⃣  TEST THE BOT:"
-echo "   - Open Telegram and message @GandiveBot"
-echo "   - Send /start to see commands"
-echo "   - Send /signals to get your first signals"
+echo "   OR serve the website from your VM for email subscribe to work:"
+echo "   - The webhook server handles email signups at http://$VM_IP:5000/subscribe"
+echo "   - Update the landing page JS to POST to http://$VM_IP:5000/subscribe"
 echo ""
-echo "6️⃣  TEST PREMIUM:"
+echo "6️⃣  TEST THE BOT:"
+echo "   - Open Telegram and message @GandiveBot"
+echo "   - Send /start to see commands (referral deep links work!)"
+echo "   - Send /signals to get your first signals"
+echo "   - Send /perf to see signal win rate"
+echo "   - Send /referral to get your referral link"
+echo ""
+echo "7️⃣  TEST PREMIUM:"
 echo "   - Send /addpremium YOUR_ID 30 to test premium"
 echo "   - Then /signals again (should show unlimited)"
+echo "   - Test /report for detailed performance (premium only)"
 echo ""
-echo "Commands:"
-echo "  pm2 logs gandive-bot     # Bot logs"
-echo "  pm2 logs gandive-webhook # Webhook logs"
-echo "  pm2 monit                # CPU/RAM dashboard"
-echo "  pm2 restart all          # Restart both processes"
+echo "8️⃣  MONITORING:"
+echo "  pm2 logs gandive-bot       # Bot logs"
+echo "  pm2 logs gandive-webhook   # Webhook logs (payments)"
+echo "  pm2 logs gandive-dashboard # Dashboard logs"
+echo "  pm2 monit                  # CPU/RAM dashboard"
+echo "  pm2 restart all            # Restart all processes"
+echo ""
+echo "💰 REVENUE CHANNELS:"
+echo "  • Ko-fi: https://ko-fi.com/adbhutrd"
+echo "  • Premium: $9.99/mo (unlimited signals)"
+echo "  • Elite: $24.99/mo (custom alerts + API)"
+echo "  • Referrals: 7 free days per referral"
+echo "  • Email: Daily digest newsletter"
+echo ""

@@ -1,0 +1,26 @@
+{
+  "referrals": {
+    "999999": {
+      "user_id": 999999,
+      "code": "11B26ECE",
+      "total_referrals": 0,
+      "reward_days_earned": 0,
+      "referred_users": []
+    },
+    "12345": {
+      "user_id": 12345,
+      "code": "D0971D2F",
+      "total_referrals": 0,
+      "reward_days_earned": 0,
+      "referred_users": []
+    }
+  },
+  "codes": {
+    "11B26ECE": "999999",
+    "D0971D2F": "12345"
+  },
+  "stats": {
+    "total_referrals": 0,
+    "total_reward_days": 0
+  }
+}

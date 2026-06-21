@@ -1,0 +1,36 @@
+{
+  "last_updated": 1782000647.472266,
+  "total_records": 2,
+  "records": [
+    {
+      "signal_id": "69a356e5df5e",
+      "pair": "TEST/USDT",
+      "signal_type": "BUY",
+      "entry_price": 100.0,
+      "timestamp": 1782000554.5908132,
+      "confidence": 75,
+      "source": "test",
+      "direction": "LONG",
+      "exit_price": null,
+      "exit_time": null,
+      "outcome": "open",
+      "pnl_percentage": null,
+      "pnl_usd": null
+    },
+    {
+      "signal_id": "f891553a592c",
+      "pair": "TEST/USDT",
+      "signal_type": "BUY",
+      "entry_price": 100.0,
+      "timestamp": 1782000647.4722073,
+      "confidence": 75,
+      "source": "test",
+      "direction": "LONG",
+      "exit_price": null,
+      "exit_time": null,
+      "outcome": "open",
+      "pnl_percentage": null,
+      "pnl_usd": null
+    }
+  ]
+}

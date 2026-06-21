@@ -49,6 +49,16 @@ from signals import (
     scan_all_pairs, cache_signals, get_cached_signals,
     fetch_trending_coins, DEFAULT_PAIRS, Signal,
 )
+from performance import (
+    get_performance_stats, get_performance_message, get_detailed_report,
+    record_signal, report_outcome, auto_resolve_signals,
+)
+from referral import (
+    generate_referral_code, apply_referral, get_referral_stats,
+    get_referral_message, get_admin_referral_stats,
+)
+from social_poster import try_post_signals
+from email_service import get_subscriber_count
 
 # ─── Setup ────────────────────────────────────────────────────────
 
@@ -134,10 +144,22 @@ def send_alert_to_admin(message: str):
         telegram_send(ADMIN_ID, f"<b>🤖 GandiveBot Alert</b>\n\n{message}")
 
 
-# ─── Command Handlers ─────────────────────────────────────────────
-
-def cmd_start(chat_id: int, user_id: int, args: List[str] = None):
-    """Welcome message with bot overview."""
+# ─── Command Handlers ─────────────────────────────────────────────def cmd_start(chat_id: int, user_id: int, args: List[str] = None):
+    """Welcome message with bot overview. Handles referral deep links."""
+    
+    # Check for referral code (format: /start ref_CODE)
+    if args and args[0].startswith("ref_"):
+        code = args[0][4:]  # Strip "ref_" prefix
+        logger.info(f"Referral deep link: user {user_id} using code {code}")
+        try:
+            from referral import apply_referral
+            success, ref_msg = apply_referral(user_id, code)
+            if success:
+                telegram_send(chat_id, ref_msg)
+            # Still show welcome even if referral fails
+        except Exception as e:
+            logger.error(f"Referral error: {e}")
+    
     tier = get_user_tier(user_id)
     tier_icon = "👑" if tier == "elite" else "⭐" if tier == "premium" else "🆓"
     tier_name = tier.capitalize()
@@ -153,6 +175,8 @@ def cmd_start(chat_id: int, user_id: int, args: List[str] = None):
         f"• ⚡ Catch momentum shifts early\n\n"
         f"<b>🤖 Commands:</b>\n"
         f"/signals  — Latest trading signals\n"
+        f"/perf     — Signal win rate & performance\n"
+        f"/referral — Get your referral link & earn free premium\n"
         f"/subscribe — Premium pricing & tiers\n"
         f"/pairs    — Monitored crypto pairs\n"
         f"/trending — Hot trending coins\n"
@@ -350,7 +374,8 @@ def cmd_status(chat_id: int, user_id: int):
         f"<b>📊 Stats:</b>\n"
         f"• Active premium users: {stats['active']}\n"
         f"• Total signals cached: {signals_cached}\n"
-        f"• Monitored pairs: {len(DEFAULT_PAIRS)}\n\n"
+        f"• Monitored pairs: {len(DEFAULT_PAIRS)}\n"
+        f"• Newsletter subscribers: {get_subscriber_count()}\n\n"
         f"<b>💎 Premium:</b>\n"
         f"• Total users: {stats['total_users']}\n"
         f"• Active: {stats['active']}\n"
@@ -520,6 +545,70 @@ def cmd_premiumstats(chat_id: int, user_id: int):
     telegram_send(chat_id, msg)
 
 
+# ─── Performance Commands ───────────────────────────────────────
+
+def cmd_performance(chat_id: int, user_id: int):
+    """Show signal performance stats (win rate, P&L)."""
+    send_typing(chat_id)
+    try:
+        auto_resolve_signals()
+        stats = get_performance_stats(days=30)
+        msg = get_performance_message(stats)
+        telegram_send(chat_id, msg)
+    except Exception as e:
+        logger.error(f"Performance error: {e}")
+        telegram_send(chat_id, "📊 Performance data is still accumulating. Check back after we've sent more signals!")
+
+
+def cmd_report(chat_id: int, user_id: int):
+    """Show detailed performance report (premium only)."""
+    tier = get_user_tier(user_id)
+    if tier not in ("premium", "elite"):
+        telegram_send(chat_id, "💎 <b>Premium Feature</b>\n\nDetailed performance reports are available for Premium and Elite subscribers.\n/subscribe to upgrade!")
+        return
+    send_typing(chat_id)
+    try:
+        auto_resolve_signals()
+        stats = get_performance_stats(days=90)
+        msg = get_detailed_report(stats)
+        telegram_send(chat_id, msg)
+    except Exception as e:
+        logger.error(f"Report error: {e}")
+        telegram_send(chat_id, "📊 Not enough data for a detailed report yet.")
+
+
+# ─── Referral Commands ────────────────────────────────────────────
+
+def cmd_referral(chat_id: int, user_id: int):
+    """Show referral link."""
+    msg = get_referral_message(user_id)
+    telegram_send(chat_id, msg)
+
+
+def cmd_myrefs(chat_id: int, user_id: int):
+    """Show referral stats."""
+    stats = get_referral_stats(user_id)
+    msg = (
+        f"<b>🔗 Your Referral Stats</b>\n\n"
+        f"• Referral code: <code>{stats['code']}</code>\n"
+        f"• Total referrals: <b>{stats['total_referrals']}</b>\n"
+        f"• Premium days earned: <b>{stats['reward_days_earned']}</b>\n"
+    )
+    if stats.get("referred_by"):
+        msg += f"• You were referred by: <code>{stats['referred_by']}</code>\n"
+    msg += f"\n/referral to get your shareable link!"
+    telegram_send(chat_id, msg)
+
+
+def cmd_refclaim(chat_id: int, user_id: int, args: List[str]):
+    """Claim a referral code."""
+    if not args:
+        telegram_send(chat_id, "Usage: /refclaim <CODE>\nEnter the referral code you received from a friend.")
+        return
+    success, message = apply_referral(user_id, args[0])
+    telegram_send(chat_id, message)
+
+
 def cmd_broadcast(chat_id: int, user_id: int, args: List[str]):
     """Broadcast message to all active premium users."""
     if user_id != ADMIN_ID:
@@ -590,8 +679,32 @@ def background_scanner():
             if signals:
                 cache_signals(signals)
                 logger.info(f"✅ Cached {len(signals)} signals")
+                
+                # Record all signals for performance tracking
+                for s in signals:
+                    try:
+                        record_signal(s.pair, s.type, s.price, s.confidence, s.source, s.timestamp)
+                    except Exception as e:
+                        logger.warning(f"Failed to record signal: {e}")
+                
+                # Auto-resolve old signals
+                try:
+                    auto_resolve_signals()
+                except Exception as e:
+                    logger.warning(f"Auto-resolve error: {e}")
+                
+                # Post to social media (Twitter/X)
+                try:
+                    try_post_signals(signals)
+                except Exception as e:
+                    logger.warning(f"Social post error: {e}")
             else:
                 logger.info("📭 No signals detected this cycle")
+                # Still try to auto-resolve
+                try:
+                    auto_resolve_signals()
+                except Exception:
+                    pass
 
             # Push high-confidence NEW signals to premium users
             push_signals_to_premium(signals)
@@ -705,6 +818,23 @@ def handle_message(update: dict):
 
     elif command == "/broadcast":
         cmd_broadcast(chat_id, user_id, args)
+
+    # ─── Performance Commands ──────────────────────────────────────
+    elif command in ("/perf", "/performance"):
+        cmd_performance(chat_id, user_id)
+
+    elif command == "/report":
+        cmd_report(chat_id, user_id)
+
+    # ─── Referral Commands ─────────────────────────────────────────
+    elif command == "/referral":
+        cmd_referral(chat_id, user_id)
+
+    elif command == "/myrefs":
+        cmd_myrefs(chat_id, user_id)
+
+    elif command == "/refclaim":
+        cmd_refclaim(chat_id, user_id, args)
 
     else:
         telegram_send(chat_id, f"🤷 Unknown command: <code>{command}</code>\n/help for available commands.")

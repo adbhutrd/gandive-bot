@@ -57,6 +57,14 @@ except ImportError as e:
     logger.error("Make sure premium.py is in the same directory.")
     sys.exit(1)
 
+try:
+    from email_service import add_subscriber, get_subscriber_count
+    logger.info("✅ Email service loaded")
+except ImportError as e:
+    logger.warning(f"Email service not available: {e}")
+    def add_subscriber(email, name="", source="webhook"): return True
+    def get_subscriber_count(): return 0
+
 # ─── Config ───
 KO_FI_VERIFICATION_TOKEN = os.getenv("KO_FI_VERIFICATION_TOKEN", "")
 
@@ -93,19 +101,33 @@ class KoFiHandler(BaseHTTPRequestHandler):
     
     def do_GET(self):
         """Health check."""
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
+        path = urlparse(self.path).path
+        
+        if path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            stats = get_premium_stats()
+            self.wfile.write(json.dumps({
+                "status": "ok",
+                "service": "gandive-bot-webhook",
+                "premium_users": stats["active"],
+                "email_subscribers": get_subscriber_count(),
+            }).encode())
+            return
+        
+        # Redirect root to health
+        self.send_response(302)
+        self.send_header("Location", "/health")
         self.end_headers()
-        stats = get_premium_stats()
-        self.wfile.write(json.dumps({
-            "status": "ok",
-            "service": "gandive-bot-kofi-webhook",
-            "premium_users": stats["active"],
-        }).encode())
     
     def do_POST(self):
         """Handle Ko-fi webhook POST."""
         path = urlparse(self.path).path
+        
+        if path == "/subscribe":
+            self._handle_subscribe(body)
+            return
         
         if path != "/kofi-webhook":
             self.send_response(404)
@@ -220,6 +242,37 @@ class KoFiHandler(BaseHTTPRequestHandler):
             "days": days if user_id else 0,
         })
     
+    def _handle_subscribe(self, body: bytes):
+        """Handle email subscription from landing page."""
+        try:
+            data = json.loads(body.decode("utf-8"))
+            email = data.get("email", "").strip()
+            name = data.get("name", "").strip()
+            
+            if not email or "@" not in email:
+                self._respond(400, {"success": False, "message": "Invalid email"})
+                return
+            
+            add_subscriber(email, name, "landing_page")
+            
+            # Notify admin
+            if ADMIN_USER_ID:
+                telegram_send(ADMIN_USER_ID,
+                    f"📧 <b>New Subscriber!</b>\n\n"
+                    f"Email: {email}\n"
+                    f"Name: {name or 'N/A'}\n"
+                    f"Total subscribers: {get_subscriber_count()}"
+                )
+            
+            logger.info(f"📧 New subscriber via webhook: {email}")
+            self._respond(200, {
+                "success": True,
+                "message": "Subscribed! Welcome to GandiveBot.",
+            })
+        except Exception as e:
+            logger.error(f"Subscribe error: {e}")
+            self._respond(500, {"success": False, "message": str(e)[:100]})
+
     def _extract_user_id(self, message: str) -> int:
         """Extract Telegram user ID from Ko-fi payment message.
         
