@@ -15,11 +15,32 @@ import os
 import json
 import time
 import logging
+try:
+    import fcntl
+except ImportError:
+    fcntl = None  # Windows: no file locking, atomic writes still work
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional, List, Tuple
 
 logger = logging.getLogger("gandive-premium")
+
+
+# ─── File Locking (prevents race conditions with webhook) ────────
+
+def _lock_file(fd, exclusive: bool = True):
+    """Lock file. Exclusive for writes, shared for reads."""
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+    except Exception:
+        pass  # Non-blocking on systems without flock (Windows)
+
+def _unlock_file(fd):
+    """Unlock file."""
+    try:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+    except Exception:
+        pass
 
 # ─── File Paths ───────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent.resolve()
@@ -72,31 +93,77 @@ SUBSCRIPTION_DURATIONS = {
 # ─── User Store ───────────────────────────────────────────────────
 
 def load_users() -> dict:
-    """Load premium users from JSON file."""
-    if USERS_FILE.exists():
+    """Load premium users from JSON file with shared lock."""
+    if not USERS_FILE.exists():
+        return {}
+    try:
+        fd = os.open(str(USERS_FILE), os.O_RDONLY)
+        _lock_file(fd, exclusive=False)
         try:
-            return json.loads(USERS_FILE.read_text())
-        except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"Failed to load users file: {e}")
-    return {}
+            with os.fdopen(fd, 'r') as f:
+                return json.load(f)
+        finally:
+            _unlock_file(fd)
+    except (json.JSONDecodeError, OSError, Exception) as e:
+        logger.warning(f"Failed to load users file: {e}")
+        return {}
+
+def _save_users_atomic(users: dict):
+    """Save users with exclusive lock and atomic write."""
+    tmp_file = USERS_FILE.with_suffix(".json.tmp")
+    try:
+        fd = os.open(str(tmp_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        _lock_file(fd, exclusive=True)
+        try:
+            with os.fdopen(fd, 'w') as f:
+                json.dump(users, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+        finally:
+            _unlock_file(fd)
+        tmp_file.replace(USERS_FILE)
+        logger.debug(f"Saved {len(users)} users")
+    except Exception as e:
+        logger.error(f"Failed to save users: {e}")
+        raise
 
 def save_users(users: dict):
     """Save premium users to JSON file."""
-    USERS_FILE.write_text(json.dumps(users, indent=2))
+    _save_users_atomic(users)
     logger.info(f"Saved {len(users)} users to {USERS_FILE}")
 
 def load_state() -> dict:
-    """Load bot state."""
-    if STATE_FILE.exists():
+    """Load bot state with shared lock."""
+    if not STATE_FILE.exists():
+        return {"total_signals_sent": 0, "total_earnings": 0.0}
+    try:
+        fd = os.open(str(STATE_FILE), os.O_RDONLY)
+        _lock_file(fd, exclusive=False)
         try:
-            return json.loads(STATE_FILE.read_text())
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {"total_signals_sent": 0, "total_earnings": 0.0}
+            with os.fdopen(fd, 'r') as f:
+                return json.load(f)
+        finally:
+            _unlock_file(fd)
+    except Exception:
+        return {"total_signals_sent": 0, "total_earnings": 0.0}
 
 def save_state(state: dict):
-    """Save bot state."""
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    """Save bot state with exclusive lock."""
+    tmp_file = STATE_FILE.with_suffix(".json.tmp")
+    try:
+        fd = os.open(str(tmp_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        _lock_file(fd, exclusive=True)
+        try:
+            with os.fdopen(fd, 'w') as f:
+                json.dump(state, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+        finally:
+            _unlock_file(fd)
+        tmp_file.replace(STATE_FILE)
+    except Exception as e:
+        logger.error(f"Failed to save state: {e}")
+        raise
 
 
 # ─── User Management ─────────────────────────────────────────────

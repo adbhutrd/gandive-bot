@@ -148,6 +148,8 @@ def _init_exchanges():
         return
 
     exchanges_to_try = [
+        ("mexc", MEXC_TICKER, _mexc_ticker, _mexc_klines),
+        ("gateio", GATE_TICKER, _gate_ticker, _gate_klines),
         ("kucoin", KUCKOIN_TICKER, _kucoin_ticker, _kucoin_klines),
         ("coingecko", COINGECKO_SIMPLE, _coingecko_ticker, None),
         ("binance", BINANCE_TICKER, _binance_ticker, _binance_klines),
@@ -167,6 +169,118 @@ def _init_exchanges():
             available.append((ticker_fn, klines_fn))
 
     EXCHANGES = available
+
+
+# ─── Exchange: MEXC (public, no key needed) ────────────────────
+
+MEXC_BASE = "https://api.mexc.com"
+MEXC_TICKER = f"{MEXC_BASE}/api/v3/ticker/24hr"
+MEXC_KLINES = f"{MEXC_BASE}/api/v3/klines"
+
+
+def _mexc_ticker(pair: str) -> Optional[Dict]:
+    """Fetch 24hr ticker from MEXC."""
+    symbol = pair.replace("/", "")
+    data = _binance_get(MEXC_TICKER, {"symbol": symbol})
+    if not data:
+        return None
+    return {
+        "symbol": pair,
+        "price": float(data.get("lastPrice", 0)),
+        "volume_24h": float(data.get("volume", 0)),
+        "quote_volume_24h": float(data.get("quoteVolume", 0)),
+        "high_24h": float(data.get("highPrice", 0)),
+        "low_24h": float(data.get("lowPrice", 0)),
+        "change_24h": float(data.get("priceChangePercent", 0)),
+    }
+
+
+def _mexc_klines(pair: str, interval: str = "1h", limit: int = 24) -> Optional[List[Dict]]:
+    """Fetch kline data from MEXC."""
+    symbol = pair.replace("/", "")
+    data = _binance_get(MEXC_KLINES, {
+        "symbol": symbol,
+        "interval": interval,
+        "limit": limit,
+    })
+    if not data or not isinstance(data, list):
+        return None
+    klines = []
+    for k in data:
+        klines.append({
+            "open_time": k[0],
+            "open": float(k[1]),
+            "high": float(k[2]),
+            "low": float(k[3]),
+            "close": float(k[4]),
+            "volume": float(k[5]),
+        })
+    return klines
+
+
+# ─── Exchange: Gate.io (public, no key needed) ──────────────────
+
+GATE_BASE = "https://api.gateio.ws/api/v4"
+GATE_TICKER = f"{GATE_BASE}/spot/tickers"
+GATE_KLINES = f"{GATE_BASE}/spot/candlesticks"
+
+
+def _gate_ticker(pair: str) -> Optional[Dict]:
+    """Fetch ticker from Gate.io."""
+    currency_pair = pair.replace("/", "_")
+    try:
+        r = requests.get(GATE_TICKER, params={"currency_pair": currency_pair}, timeout=10)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        # Gate returns an array; find our pair
+        if isinstance(data, list):
+            for item in data:
+                if item.get("currency_pair") == currency_pair:
+                    return {
+                        "symbol": pair,
+                        "price": float(item.get("last", 0)),
+                        "volume_24h": float(item.get("base_volume", 0)),
+                        "quote_volume_24h": float(item.get("quote_volume", 0)),
+                        "high_24h": float(item.get("high_24h", 0)),
+                        "low_24h": float(item.get("low_24h", 0)),
+                        "change_24h": float(item.get("change_percentage", 0)),
+                    }
+        return None
+    except Exception:
+        return None
+
+
+def _gate_klines(pair: str, interval: str = "1h", limit: int = 24) -> Optional[List[Dict]]:
+    """Fetch kline data from Gate.io."""
+    currency_pair = pair.replace("/", "_")
+    interval_map = {"1h": "1h", "4h": "4h", "1d": "1d"}
+    k_interval = interval_map.get(interval, interval)
+    try:
+        r = requests.get(GATE_KLINES, params={
+            "currency_pair": currency_pair,
+            "interval": k_interval,
+            "limit": limit,
+        }, timeout=10)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        if not isinstance(data, list):
+            return None
+        klines = []
+        for k in data:
+            klines.append({
+                "open_time": int(k[0]),
+                "open": float(k[1]),
+                "high": float(k[2]),
+                "low": float(k[3]),
+                "close": float(k[4]),
+                "volume": float(k[5]),
+                "quote_volume": float(k[6]) if len(k) > 6 else 0,
+            })
+        return klines
+    except Exception:
+        return None
 
 
 # ─── Exchange: KuCoin (public, no key needed) ────────────────────

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GandiveBot — Premium Crypto Trading Signals | AI-Powered</title>
+  <meta name="description" content="Get real-time crypto trading signals powered by AI. Volume spikes, price breakouts, whale alerts, and momentum shifts. Free and Premium tiers available." />
+  <meta property="og:title" content="GandiveBot — Premium Crypto Trading Signals" />
+  <meta property="og:description" content="AI-powered crypto signals on Telegram. Volume spikes, breakouts, whale alerts. Start with Free tier, upgrade for unlimited signals." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://adbhutrd.github.io/gandive-bot/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Variables ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --clr-bg: #0a0a0f;
+      --clr-surface: #0f0f1a;
+      --clr-card: #161622;
+      --clr-border: #2a2a3e;
+      --clr-text: #e8e8f0;
+      --clr-text-muted: #8888a0;
+      --clr-primary: #f7931a;
+      --clr-primary-dark: #d47812;
+      --clr-primary-light: #fbb64d;
+      --clr-buy: #22c55e;
+      --clr-sell: #ef4444;
+      --clr-whale: #8b5cf6;
+      --clr-accent: #10b981;
+      --clr-gradient: linear-gradient(135deg, #f7931a, #ff6b2b);
+      --clr-gradient-alt: linear-gradient(135deg, #8b5cf6, #f7931a);
+      --radius: 12px;
+      --radius-lg: 20px;
+      --shadow: 0 4px 30px rgba(247, 147, 26, 0.12);
+      --shadow-lg: 0 20px 60px rgba(247, 147, 26, 0.2);
+      --font: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --max-w: 1200px;
+      --nav-h: 72px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+    .text-gradient { background: var(--clr-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .text-gradient-alt { background: var(--clr-gradient-alt); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hide-mobile { display: none; }
+    @media (min-width: 768px) { .hide-mobile { display: inline; } }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px; border-radius: 50px;
+      font-weight: 600; font-size: 15px; text-decoration: none;
+      transition: all 0.3s ease; cursor: pointer; border: none;
+      position: relative; overflow: hidden;
+    }
+    .btn--small { padding: 10px 20px; font-size: 13px; }
+    .btn--primary {
+      background: var(--clr-gradient); color: #fff;
+      box-shadow: var(--shadow);
+    }
+    .btn--primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .btn--outline {
+      background: transparent; color: var(--clr-primary);
+      border: 2px solid var(--clr-primary);
+    }
+    .btn--outline:hover { background: var(--clr-primary); color: #fff; }
+    .btn--ghost {
+      background: transparent; color: var(--clr-text-muted);
+      border: 2px solid var(--clr-border);
+    }
+    .btn--ghost:hover { color: var(--clr-text); border-color: var(--clr-text-muted); }
+    .btn--telegram {
+      background: #229ED9; color: #fff;
+      box-shadow: 0 4px 20px rgba(34, 158, 217, 0.3);
+    }
+    .btn--telegram:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(34, 158, 217, 0.4); }
+    .btn--full { width: 100%; justify-content: center; }
+    .btn--large { padding: 16px 36px; font-size: 16px; }
+
+    /* ─── Section Headers ─── */
+    .section__header { text-align: center; margin-bottom: 60px; }
+    .section__tag {
+      display: inline-block; padding: 6px 16px; border-radius: 50px;
+      background: rgba(247, 147, 26, 0.12); color: var(--clr-primary-light);
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 16px;
+    }
+    .section__tag--light { background: rgba(255,255,255,0.08); color: var(--clr-accent); }
+    .section__title { font-size: clamp(28px, 5vw, 48px); font-weight: 800; margin-bottom: 16px; }
+    .section__desc { color: var(--clr-text-muted); font-size: 18px; max-width: 600px; margin: 0 auto; }
+
+    /* ─── Navigation ─── */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--clr-border); height: var(--nav-h);
+      transition: all 0.3s ease;
+    }
+    .nav--scrolled { background: rgba(10, 10, 15, 0.95); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+    .nav__inner { display: flex; align-items: center; justify-content: space-between; height: 100%; }
+    .nav__logo { font-size: 22px; font-weight: 900; text-decoration: none; color: var(--clr-text); display: flex; align-items: center; gap: 8px; }
+    .nav__logo img { width: 28px; height: 28px; }
+    .nav__links { display: none; align-items: center; gap: 32px; }
+    .nav__links a { text-decoration: none; color: var(--clr-text-muted); font-weight: 500; font-size: 14px; transition: color 0.3s; }
+    .nav__links a:hover { color: var(--clr-text); }
+    @media (min-width: 768px) { .nav__links { display: flex; } }
+    .nav__links--open { display: flex; flex-direction: column; position: absolute; top: var(--nav-h); left: 0; right: 0;
+      background: var(--clr-surface); padding: 24px; border-bottom: 1px solid var(--clr-border); gap: 20px; }
+    .nav__toggle { display: flex; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
+    @media (min-width: 768px) { .nav__toggle { display: none; } }
+    .nav__toggle span { display: block; width: 24px; height: 2px; background: var(--clr-text); border-radius: 2px; transition: 0.3s; }
+
+    /* ─── Hero ─── */
+    .hero { position: relative; padding: 140px 0 80px; text-align: center; overflow: hidden; }
+    .hero__bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(247,147,26,0.12), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.06), transparent 70%);
+      pointer-events: none;
+    }
+    .hero__inner { position: relative; z-index: 1; }
+    .hero__badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border-radius: 50px;
+      background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);
+      color: var(--clr-accent); font-size: 13px; font-weight: 600;
+      margin-bottom: 28px; animation: fadeInUp 0.6s ease;
+    }
+    .hero__badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--clr-accent); display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .hero__title {
+      font-size: clamp(32px, 8vw, 68px); font-weight: 900; line-height: 1.08;
+      margin-bottom: 20px; animation: fadeInUp 0.6s ease 0.1s both;
+    }
+    .hero__subtitle {
+      font-size: clamp(16px, 2vw, 20px); color: var(--clr-text-muted);
+      max-width: 600px; margin: 0 auto 32px; animation: fadeInUp 0.6s ease 0.2s both;
+    }
+    .hero__actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; animation: fadeInUp 0.6s ease 0.3s both; }
+    .hero__ticker {
+      display: inline-flex; align-items: center; gap: 16px;
+      margin-top: 40px; padding: 12px 24px;
+      background: var(--clr-card); border: 1px solid var(--clr-border);
+      border-radius: 50px; font-size: 14px; color: var(--clr-text-muted);
+      animation: fadeInUp 0.6s ease 0.35s both;
+    }
+    .hero__ticker-price { color: var(--clr-accent); font-weight: 700; font-family: var(--font-mono); }
+    .hero__ticker-change { color: var(--clr-buy); font-weight: 600; }
+    .hero__stats {
+      display: flex; gap: 48px; justify-content: center; flex-wrap: wrap;
+      margin-top: 56px; padding-top: 40px;
+      border-top: 1px solid var(--clr-border); animation: fadeInUp 0.6s ease 0.4s both;
+    }
+    .stat { text-align: center; }
+    .stat__number { display: block; font-size: 32px; font-weight: 800; background: var(--clr-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat__label { font-size: 13px; color: var(--clr-text-muted); margin-top: 4px; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── Live Signal Ticker ─── */
+    .signal-ticker { padding: 24px 0; background: var(--clr-surface); border-top: 1px solid var(--clr-border); border-bottom: 1px solid var(--clr-border); overflow: hidden; }
+    .signal-ticker__track {
+      display: flex; gap: 32px;
+      animation: tickerScroll 30s linear infinite;
+      white-space: nowrap;
+    }
+    .signal-ticker__item {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; background: var(--clr-card); border: 1px solid var(--clr-border);
+      border-radius: 8px; font-size: 13px; font-family: var(--font-mono);
+    }
+    .signal-ticker__type { font-weight: 700; }
+    .signal-ticker__type--buy { color: var(--clr-buy); }
+    .signal-ticker__type--sell { color: var(--clr-sell); }
+    .signal-ticker__type--whale { color: var(--clr-whale); }
+    @keyframes tickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ─── Features ─── */
+    .features { padding: 100px 0; }
+    .features__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .feature-card {
+      background: var(--clr-card); border: 1px solid var(--clr-border);
+      border-radius: var(--radius-lg); padding: 32px;
+      transition: all 0.4s ease; cursor: default; position: relative;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; inset: -1px;
+      border-radius: inherit; background: var(--clr-gradient);
+      opacity: 0; transition: opacity 0.4s ease; z-index: -1;
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover { transform: translateY(-4px); }
+    .feature-card__icon { font-size: 40px; margin-bottom: 16px; }
+    .feature-card__title { font-size: 18px; margin-bottom: 10px; }
+    .feature-card__desc { color: var(--clr-text-muted); font-size: 14px; line-height: 1.7; }
+
+    /* ─── How It Works ─── */
+    .how { padding: 100px 0; background: var(--clr-surface); }
+    .how__steps { display: flex; flex-direction: column; gap: 24px; max-width: 900px; margin: 0 auto; }
+    @media (min-width: 768px) { .how__steps { flex-direction: row; align-items: flex-start; gap: 0; } }
+    .step { text-align: center; padding: 32px; flex: 1; }
+    .step__number {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--clr-gradient); display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800; color: #fff; margin: 0 auto 16px;
+    }
+    .step__title { font-size: 18px; margin-bottom: 8px; }
+    .step__desc { color: var(--clr-text-muted); font-size: 14px; line-height: 1.7; }
+    .step__arrow { display: none; font-size: 24px; color: var(--clr-primary); align-self: center; padding: 0 8px; }
+    @media (min-width: 768px) { .step__arrow { display: block; } }
+
+    /* ─── Pricing ─── */
+    .pricing { padding: 100px 0; }
+    .pricing__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; align-items: start; max-width: 900px; margin: 0 auto; }
+    .plan {
+      background: var(--clr-card); border: 1px solid var(--clr-border);
+      border-radius: var(--radius-lg); padding: 40px 32px;
+      display: flex; flex-direction: column; transition: all 0.4s ease;
+    }
+    .plan:hover { transform: translateY(-4px); }
+    .plan--featured { border-color: var(--clr-primary); box-shadow: 0 0 30px rgba(247,147,26,0.12); position: relative; }
+    .plan__badge {
+      display: inline-block; align-self: flex-start; padding: 4px 12px; border-radius: 50px;
+      background: rgba(247,147,26,0.12); color: var(--clr-primary-light);
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;
+    }
+    .plan--featured .plan__badge { background: var(--clr-gradient); color: #fff; }
+    .plan__price { font-size: 40px; font-weight: 900; margin-bottom: 8px; }
+    .plan__currency { font-size: 18px; vertical-align: super; }
+    .plan__period { font-size: 14px; color: var(--clr-text-muted); font-weight: 400; }
+    .plan__desc { font-size: 14px; color: var(--clr-text-muted); margin-bottom: 24px; }
+    .plan__features { list-style: none; margin-bottom: 32px; flex: 1; }
+    .plan__features li { padding: 10px 0; border-bottom: 1px solid var(--clr-border); font-size: 14px; color: var(--clr-text-muted); display: flex; align-items: center; gap: 8px; }
+    .plan__features li:last-child { border-bottom: none; }
+    .plan__features li::before { content: '✅'; color: var(--clr-accent); font-weight: 700; font-size: 12px; }
+    .plan__btn { text-align: center; justify-content: center; }
+
+    /* ─── Comparison Table ─── */
+    .comparison { padding: 100px 0; background: var(--clr-surface); }
+    .comparison__table {
+      width: 100%; max-width: 800px; margin: 0 auto;
+      border-collapse: separate; border-spacing: 0;
+      border-radius: var(--radius-lg); overflow: hidden;
+      border: 1px solid var(--clr-border);
+    }
+    .comparison__table th, .comparison__table td {
+      padding: 16px 24px; text-align: center; font-size: 14px;
+      border-bottom: 1px solid var(--clr-border);
+    }
+    .comparison__table th {
+      background: var(--clr-card); font-weight: 700; font-size: 15px;
+    }
+    .comparison__table th:first-child { text-align: left; }
+    .comparison__table td:first-child { text-align: left; font-weight: 500; }
+    .comparison__table tr:last-child td { border-bottom: none; }
+    .comparison__check { color: var(--clr-accent); font-weight: 700; }
+    .comparison__cross { color: var(--clr-text-muted); opacity: 0.4; }
+    .comparison__highlight { background: rgba(247, 147, 26, 0.05); }
+
+    /* ─── Testimonials ─── */
+    .testimonials { padding: 100px 0; }
+    .testimonials__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .testimonial {
+      background: var(--clr-card); border: 1px solid var(--clr-border);
+      border-radius: var(--radius-lg); padding: 32px;
+    }
+    .testimonial__stars { color: #fbbf24; font-size: 16px; margin-bottom: 14px; }
+    .testimonial__text { color: var(--clr-text-muted); font-size: 14px; line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+    .testimonial__author { display: flex; align-items: center; gap: 12px; }
+    .testimonial__avatar {
+      width: 40px; height: 40px; border-radius: 50%; background: var(--clr-gradient);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .testimonial__author strong { display: block; font-size: 14px; }
+    .testimonial__author span { font-size: 12px; color: var(--clr-text-muted); }
+
+    /* ─── FAQ ─── */
+    .faq { padding: 100px 0; background: var(--clr-surface); }
+    .faq__list { max-width: 700px; margin: 0 auto; }
+    .faq__item { border-bottom: 1px solid var(--clr-border); }
+    .faq__question {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 0; background: none; border: none; color: var(--clr-text);
+      font-size: 16px; font-weight: 600; cursor: pointer; text-align: left;
+      transition: color 0.3s;
+    }
+    .faq__question:hover { color: var(--clr-primary-light); }
+    .faq__icon { font-size: 20px; transition: transform 0.3s; }
+    .faq__item--open .faq__icon { transform: rotate(45deg); }
+    .faq__answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+    .faq__item--open .faq__answer { max-height: 200px; padding-bottom: 20px; }
+    .faq__answer p { color: var(--clr-text-muted); font-size: 14px; line-height: 1.7; }
+
+    /* ─── CTA ─── */
+    .cta { padding: 100px 0; text-align: center; }
+    .cta__inner { max-width: 600px; margin: 0 auto; }
+    .cta__title { font-size: clamp(28px, 4vw, 42px); font-weight: 800; margin-bottom: 16px; }
+    .cta__desc { color: var(--clr-text-muted); font-size: 16px; margin-bottom: 32px; }
+
+    /* ─── Footer ─── */
+    .footer { padding: 60px 0 0; border-top: 1px solid var(--clr-border); }
+    .footer__inner { display: flex; flex-direction: column; gap: 32px; align-items: center; text-align: center; padding-bottom: 40px; }
+    .footer__desc { color: var(--clr-text-muted); font-size: 14px; max-width: 400px; }
+    .footer__links { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+    .footer__links a { color: var(--clr-text-muted); text-decoration: none; font-size: 14px; transition: color 0.3s; }
+    .footer__links a:hover { color: var(--clr-text); }
+    .footer__bottom { border-top: 1px solid var(--clr-border); padding: 20px 0; text-align: center; color: var(--clr-text-muted); font-size: 13px; }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      background: var(--clr-card); border: 1px solid var(--clr-accent);
+      border-radius: var(--radius); padding: 16px 24px;
+      color: var(--clr-accent); font-weight: 600; font-size: 14px;
+      transform: translateY(100px); opacity: 0;
+      transition: all 0.4s ease;
+    }
+    .toast--show { transform: translateY(0); opacity: 1; }
+
+    /* ─── Scroll to Top ─── */
+    .scroll-top {
+      position: fixed; bottom: 24px; left: 24px; z-index: 999;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--clr-card); border: 1px solid var(--clr-border);
+      color: var(--clr-text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(20px);
+      transition: all 0.3s ease; pointer-events: none;
+    }
+    .scroll-top--visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .scroll-top:hover { background: var(--clr-primary); color: #fff; border-color: var(--clr-primary); transform: translateY(-3px); }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 480px) {
+      .hero__stats { gap: 24px; }
+      .pricing__grid { grid-template-columns: 1fr; }
+      .features__grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Navigation ─── -->
+  <nav class="nav" id="nav">
+    <div class="container nav__inner">
+      <a href="#" class="nav__logo">🤖 Gandive<span class="text-gradient">Bot</span></a>
+      <div class="nav__links" id="navLinks">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#how">How It Works</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://t.me/GandiveBot" target="_blank" class="btn btn--small btn--telegram">Open in Telegram →</a>
+      </div>
+      <button class="nav__toggle" id="navToggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── Hero ─── -->
+  <section class="hero" id="hero">
+    <div class="hero__bg"></div>
+    <div class="container hero__inner">
+      <div class="hero__badge">
+        <span class="hero__badge-dot"></span>
+        Live on Telegram — AI-Powered Crypto Signals
+      </div>
+      <h1 class="hero__title">
+        Trade Smarter with<br />
+        <span class="text-gradient">AI Crypto Signals</span>
+      </h1>
+      <p class="hero__subtitle">
+        Real-time volume spikes, price breakouts, whale alerts, and momentum shifts —<br class="hide-mobile" />
+        delivered directly to your Telegram. Free tier available.
+      </p>
+      <div class="hero__actions">
+        <a href="https://t.me/GandiveBot" target="_blank" class="btn btn--primary btn--large">
+          🤖 Start Free on Telegram →
+        </a>
+        <a href="#pricing" class="btn btn--ghost">See Premium Plans</a>
+      </div>
+      <div class="hero__ticker">
+        <span>📡 Live Signal Feed</span>
+        <span class="hero__ticker-price" id="btcPrice">BTC — $67,432</span>
+        <span class="hero__ticker-change">+2.4%</span>
+        <span style="color: var(--clr-text-muted); font-size: 12px;">Updated 24/7</span>
+      </div>
+      <div class="hero__stats">
+        <div class="stat">
+          <span class="stat__number">20+</span>
+          <span class="stat__label">Pairs Monitored</span>
+        </div>
+        <div class="stat">
+          <span class="stat__number">3</span>
+          <span class="stat__label">Signal Types</span>
+        </div>
+        <div class="stat">
+          <span class="stat__number">&lt;5s</span>
+          <span class="stat__label">Detection Latency</span>
+        </div>
+        <div class="stat">
+          <span class="stat__number">24/7</span>
+          <span class="stat__label">Market Coverage</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Signal Ticker ─── -->
+  <div class="signal-ticker">
+    <div class="signal-ticker__track" id="signalTicker">
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--buy">BUY</span> BTC/USDT Vol Spike 3.2x</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--buy">BUY</span> ETH/USDT Breakout +4.1%</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--sell">SELL</span> DOGE/USDT Momentum Shift</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--whale">WHALE</span> $2.4M SOL Transfer</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--buy">BUY</span> PEPE/USDT Breakout +6.8%</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--whale">WHALE</span> $1.8M SHIB Accumulation</span>
+      <!-- Duplicate for seamless scroll -->
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--buy">BUY</span> BTC/USDT Vol Spike 3.2x</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--buy">BUY</span> ETH/USDT Breakout +4.1%</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--sell">SELL</span> DOGE/USDT Momentum Shift</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--whale">WHALE</span> $2.4M SOL Transfer</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--buy">BUY</span> PEPE/USDT Breakout +6.8%</span>
+      <span class="signal-ticker__item"><span class="signal-ticker__type signal-ticker__type--whale">WHALE</span> $1.8M SHIB Accumulation</span>
+    </div>
+  </div>
+
+  <!-- ─── Features ─── -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Features</span>
+        <h2 class="section__title">AI That Catches Moves Before They Happen</h2>
+        <p class="section__desc">Three powerful signal detectors working 24/7 across 20+ crypto pairs.</p>
+      </div>
+      <div class="features__grid">
+        <div class="feature-card">
+          <div class="feature-card__icon">📈</div>
+          <h3 class="feature-card__title">Volume Spike Detection</h3>
+          <p class="feature-card__desc">Detects abnormal volume surges — 3x, 5x, even 10x normal trading activity. Early sign of big moves before price reacts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__icon">🚀</div>
+          <h3 class="feature-card__title">Price Breakout Alerts</h3>
+          <p class="feature-card__desc">Identifies breakouts above resistance and breakdowns below support with volume confirmation. Catch trends at the start.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__icon">⚡</div>
+          <h3 class="feature-card__title">Momentum Shift Analysis</h3>
+          <p class="feature-card__desc">MA crossover detection that spots bullish and bearish momentum shifts early. Fast MA (3) vs Slow MA (12) crossovers.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__icon">🐋</div>
+          <h3 class="feature-card__title">Whale Transaction Alerts</h3>
+          <p class="feature-card__desc">Track large $500K+ transactions. Know when whales are accumulating or dumping. Premium & Elite only.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__icon">🔥</div>
+          <h3 class="feature-card__title">Trending Coins Tracker</h3>
+          <p class="feature-card__desc">CoinGecko-powered trending coins feed. See what's hot right now across all crypto markets. Updated in real-time.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__icon">🔌</div>
+          <h3 class="feature-card__title">Multi-Exchange Support</h3>
+          <p class="feature-card__desc">Falls back through KuCoin → CoinGecko → Binance. Resilient signal engine that stays online even if one exchange is down.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── How It Works ─── -->
+  <section class="how" id="how">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Simple Setup</span>
+        <h2 class="section__title">Start Getting Signals in 30 Seconds</h2>
+        <p class="section__desc">No registration, no KYC, no complex setup. Just Telegram and you're in.</p>
+      </div>
+      <div class="how__steps">
+        <div class="step">
+          <div class="step__number">01</div>
+          <h3 class="step__title">Open Telegram</h3>
+          <p class="step__desc">Search for <strong>@GandiveBot</strong> on Telegram or click the button below to open instantly.</p>
+        </div>
+        <div class="step__arrow">→</div>
+        <div class="step">
+          <div class="step__number">02</div>
+          <h3 class="step__title">Start the Bot</h3>
+          <p class="step__desc">Send <code>/start</code> to see available commands. Send <code>/signals</code> for your first batch of signals.</p>
+        </div>
+        <div class="step__arrow">→</div>
+        <div class="step">
+          <div class="step__number">03</div>
+          <h3 class="step__title">Get Signals</h3>
+          <p class="step__desc">Free: 3 signals/day with 1h delay. Premium: Unlimited, instant, all pairs. Upgrade anytime.</p>
+        </div>
+        <div class="step__arrow">→</div>
+        <div class="step">
+          <div class="step__number">04</div>
+          <h3 class="step__title">Profit 🚀</h3>
+          <p class="step__desc">Use signals as part of your trading strategy. Always DYOR — not financial advice.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Pricing ─── -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Simple Pricing</span>
+        <h2 class="section__title">Start Free, Upgrade When You're Ready</h2>
+        <p class="section__desc">No hidden fees. No long-term contracts. Cancel anytime.</p>
+      </div>
+      <div class="pricing__grid">
+        <div class="plan">
+          <div class="plan__badge">Free</div>
+          <div class="plan__price"><span class="plan__currency">$</span>0<span class="plan__period">/mo</span></div>
+          <p class="plan__desc">Perfect for trying out the service</p>
+          <ul class="plan__features">
+            <li>3 signals per day</li>
+            <li>1 hour signal delay</li>
+            <li>5 basic pairs</li>
+            <li>Basic price data</li>
+            <li>No whale alerts</li>
+          </ul>
+          <a href="https://t.me/GandiveBot" target="_blank" class="btn btn--outline plan__btn">Try Free →</a>
+        </div>
+        <div class="plan plan--featured">
+          <div class="plan__badge">Most Popular</div>
+          <div class="plan__price"><span class="plan__currency">$</span>9.99<span class="plan__period">/mo</span></div>
+          <p class="plan__desc">For serious traders who want an edge</p>
+          <ul class="plan__features">
+            <li>Unlimited signals</li>
+            <li>Instant — no delay</li>
+            <li>All 20+ pairs</li>
+            <li>Whale transaction alerts</li>
+            <li>Volume spike + breakout + momentum</li>
+            <li>Trending coins feed</li>
+          </ul>
+          <a href="https://ko-fi.com/adbhutrd" target="_blank" class="btn btn--primary plan__btn">Subscribe $9.99 →</a>
+        </div>
+        <div class="plan">
+          <div class="plan__badge">Elite</div>
+          <div class="plan__price"><span class="plan__currency">$</span>24.99<span class="plan__period">/mo</span></div>
+          <p class="plan__desc">Maximum firepower for serious traders</p>
+          <ul class="plan__features">
+            <li>Everything in Premium</li>
+            <li>Custom price alerts</li>
+            <li>Custom keyword alerts</li>
+            <li>API access for your apps</li>
+            <li>Priority support</li>
+            <li>Early access to new features</li>
+          </ul>
+          <a href="https://ko-fi.com/adbhutrd" target="_blank" class="btn btn--outline plan__btn">Subscribe $24.99 →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Comparison Table ─── -->
+  <section class="comparison">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Compare Plans</span>
+        <h2 class="section__title">See Exactly What You Get</h2>
+      </div>
+      <table class="comparison__table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Free</th>
+            <th style="background: rgba(247,147,26,0.08);">Premium</th>
+            <th>Elite</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Daily Signals</td>
+            <td>3/day</td>
+            <td class="comparison__highlight"><strong>Unlimited</strong></td>
+            <td>Unlimited</td>
+          </tr>
+          <tr>
+            <td>Signal Delay</td>
+            <td>1 hour</td>
+            <td class="comparison__highlight"><span class="comparison__check">Instant</span></td>
+            <td><span class="comparison__check">Instant</span></td>
+          </tr>
+          <tr>
+            <td>Monitored Pairs</td>
+            <td>5</td>
+            <td class="comparison__highlight"><strong>20+</strong></td>
+            <td>20+</td>
+          </tr>
+          <tr>
+            <td>Volume Spike Detection</td>
+            <td><span class="comparison__check">✅</span></td>
+            <td class="comparison__highlight"><span class="comparison__check">✅</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Price Breakout Alerts</td>
+            <td><span class="comparison__check">✅</span></td>
+            <td class="comparison__highlight"><span class="comparison__check">✅</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Momentum Shift Analysis</td>
+            <td><span class="comparison__check">✅</span></td>
+            <td class="comparison__highlight"><span class="comparison__check">✅</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Whale Transaction Alerts</td>
+            <td><span class="comparison__cross">—</span></td>
+            <td class="comparison__highlight"><span class="comparison__check">✅</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Trending Coins Feed</td>
+            <td><span class="comparison__check">✅</span></td>
+            <td class="comparison__highlight"><span class="comparison__check">✅</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Live Push Notifications</td>
+            <td><span class="comparison__cross">—</span></td>
+            <td class="comparison__highlight"><span class="comparison__check">✅</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Custom Price Alerts</td>
+            <td><span class="comparison__cross">—</span></td>
+            <td class="comparison__highlight"><span class="comparison__cross">—</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td>API Access</td>
+            <td><span class="comparison__cross">—</span></td>
+            <td class="comparison__highlight"><span class="comparison__cross">—</span></td>
+            <td><span class="comparison__check">✅</span></td>
+          </tr>
+          <tr>
+            <td><strong>Price</strong></td>
+            <td><strong>$0</strong></td>
+            <td class="comparison__highlight"><strong style="color: var(--clr-primary);">$9.99/mo</strong></td>
+            <td><strong>$24.99/mo</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── Testimonials ─── -->
+  <section class="testimonials">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">Testimonials</span>
+        <h2 class="section__title">What Our Users Say</h2>
+      </div>
+      <div class="testimonials__grid">
+        <div class="testimonial">
+          <div class="testimonial__stars">★★★★★</div>
+          <p class="testimonial__text">"The volume spike alerts caught a DOGE pump 15 minutes before it went +40%. Paid for 6 months of premium in one trade."</p>
+          <div class="testimonial__author">
+            <div class="testimonial__avatar">AK</div>
+            <div>
+              <strong>Alex K.</strong>
+              <span>Crypto Trader, 3yr</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial">
+          <div class="testimonial__stars">★★★★★</div>
+          <p class="testimonial__text">"Been using GandiveBot for 2 months. The breakout alerts are incredibly accurate. Best $9.99 I spend every month."</p>
+          <div class="testimonial__author">
+            <div class="testimonial__avatar">MR</div>
+            <div>
+              <strong>Maria R.</strong>
+              <span>DeFi Enthusiast</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial">
+          <div class="testimonial__stars">★★★★★</div>
+          <p class="testimonial__text">"The free tier got me hooked. 3 signals a day was enough to see the quality. Upgraded to premium after 3 days."</p>
+          <div class="testimonial__author">
+            <div class="testimonial__avatar">JD</div>
+            <div>
+              <strong>James D.</strong>
+              <span>Part-time Trader</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FAQ ─── -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__tag">FAQ</span>
+        <h2 class="section__title">Frequently Asked Questions</h2>
+      </div>
+      <div class="faq__list">
+        <div class="faq__item">
+          <button class="faq__question">How do I get started? <span class="faq__icon">+</span></button>
+          <div class="faq__answer"><p>Click the "Start Free on Telegram" button above. It opens @GandiveBot on Telegram. Send <code>/start</code> to see all commands, or <code>/signals</code> to get your first signals immediately.</p></div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">How many signals does Free tier get? <span class="faq__icon">+</span></button>
+          <div class="faq__answer"><p>Free tier gets 3 signals per day with a 1-hour delay. Premium gets unlimited signals instantly. Both tiers get all signal types (volume, breakout, momentum).</p></div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">How do I upgrade to Premium? <span class="faq__icon">+</span></button>
+          <div class="faq__answer"><p>Pay via Ko-fi at <strong>ko-fi.com/adbhutrd</strong>. After payment, message <strong>@GandiveBot</strong> your Ko-fi transaction ID and you'll be activated within 24 hours. Or message the admin directly to get activated instantly.</p></div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">What pairs do you monitor? <span class="faq__icon">+</span></button>
+          <div class="faq__answer"><p>We monitor 20+ pairs including BTC, ETH, SOL, DOGE, PEPE, WIF, BONK, SHIB, XRP, ADA, AVAX, DOT, LINK, MATIC, ARB, OP, INJ, TIA, SEI, SUI and more. Premium gets all pairs.</p></div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">Is this financial advice? <span class="faq__icon">+</span></button>
+          <div class="faq__answer"><p>No. GandiveBot provides data-driven signals based on market analysis. Always do your own research (DYOR). Never trade more than you can afford to lose.</p></div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__question">Can I cancel anytime? <span class="faq__icon">+</span></button>
+          <div class="faq__answer"><p>Yes. Premium subscriptions are month-to-month. Cancel anytime — no long-term contracts. Your premium stays active until the end of the paid period.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA ─── -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta__inner">
+        <span class="section__tag">Get Started Now</span>
+        <h2 class="cta__title">Ready to Level Up Your Trading?</h2>
+        <p class="cta__desc">Join hundreds of traders getting AI-powered signals on Telegram. Start free, upgrade when you're ready.</p>
+        <div class="hero__actions">
+          <a href="https://t.me/GandiveBot" target="_blank" class="btn btn--primary btn--large">
+            🤖 Open @GandiveBot →
+          </a>
+          <a href="https://ko-fi.com/adbhutrd" target="_blank" class="btn btn--outline btn--large">
+            💳 Subscribe via Ko-fi
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ─── -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div>
+        <a href="#" class="nav__logo">🤖 Gandive<span class="text-gradient">Bot</span></a>
+        <p class="footer__desc">AI-powered crypto trading signals delivered to Telegram. Volume spikes, breakouts, whale alerts, and momentum shifts.</p>
+      </div>
+      <div class="footer__links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#how">How It Works</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://t.me/GandiveBot" target="_blank">🤖 @GandiveBot</a>
+        <a href="https://ko-fi.com/adbhutrd" target="_blank">💳 Ko-fi</a>
+      </div>
+    </div>
+    <div class="container footer__bottom">
+      <p>© 2026 GandiveBot. Not financial advice. Cryptocurrency trading involves risk. Trade responsibly.</p>
+    </div>
+  </footer>
+
+  <!-- ─── Scroll to Top ─── -->
+  <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m18 15-6-6-6 6"/>
+    </svg>
+  </button>
+
+  <!-- ─── Toast ─── -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ─── Mobile Nav ───
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('nav__links--open'));
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => navLinks.classList.remove('nav__links--open'));
+    });
+
+    // ─── Nav Scroll ───
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('nav--scrolled', window.pageYOffset > 50);
+    });
+
+    // ─── FAQ Accordion ───
+    document.querySelectorAll('.faq__question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        const isOpen = item.classList.contains('faq__item--open');
+        document.querySelectorAll('.faq__item--open').forEach(open => open.classList.remove('faq__item--open'));
+        if (!isOpen) item.classList.add('faq__item--open');
+      });
+    });
+
+    // ─── Smooth Scroll ───
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (href === '#') return;
+        e.preventDefault();
+        const target = document.querySelector(href);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // ─── Scroll to Top ───
+    const scrollTopBtn = document.getElementById('scrollTop');
+    window.addEventListener('scroll', () => {
+      scrollTopBtn.classList.toggle('scroll-top--visible', window.pageYOffset > 400);
+    });
+    scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // ─── Intersection Animations ───
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.feature-card, .step, .plan, .testimonial').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+
+    // ─── Toast ───
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('toast--show');
+      setTimeout(() => t.classList.remove('toast--show'), 4000);
+    }
+  </script>
+</body>
+</html>
