@@ -257,8 +257,20 @@ def cmd_signals(chat_id: int, user_id: int):
     if len(selected) < max_signals:
         selected.extend(medium[:max_signals - len(selected)])
 
+    # If no trading signals found, show market summary instead
     if not selected:
-        telegram_send(chat_id, "📭 No high-confidence signals right now. Markets are quiet. Check back soon!")
+        market_updates = [s for s in signals if s.type == "MARKET"]
+        if market_updates:
+            summary = market_updates[0]
+            msg = (
+                f"<b>📊 Market Update</b>\n\n"
+                f"{summary.reason}\n\n"
+                f"<i>No specific setups detected right now. The scanner checks 20 pairs every 5 minutes — I'll alert you as soon as something moves.</i>"
+            )
+            telegram_send(chat_id, msg)
+            return
+        
+        telegram_send(chat_id, "📭 No signals right now. Scanner checks every 5 minutes — check back soon!")
         return
 
     # Send signals
