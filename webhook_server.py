@@ -219,9 +219,8 @@ class KoFiHandler(BaseHTTPRequestHandler):
         from_name = data.get("from_name", email)
         timestamp = data.get("timestamp", datetime.now().isoformat())
         
-        # Sanitize user-supplied fields for HTML safety
+        # Sanitize user-supplied fields for HTML safety in Telegram messages
         safe_from = from_name.replace("<", "&lt;").replace(">", "&gt;")
-        safe_email = email.replace("<", "&lt;").replace(">", "&gt;")
         
         logger.info(f"💰 Ko-fi payment received: {amount} {currency} from {safe_from}")
         
