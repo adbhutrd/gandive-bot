@@ -65,6 +65,44 @@ except ImportError as e:
     def add_subscriber(email, name="", source="webhook"): return True
     def get_subscriber_count(): return 0
 
+# ─── Rate Limiting ──────────────────────────────────────────────
+# Simple in-memory rate limiter to prevent webhook abuse.
+# Limits: max 10 requests per IP per minute, max 100 per day total.
+import time
+from collections import defaultdict
+
+_rate_limit_ip = defaultdict(list)  # ip -> [timestamps]
+_total_today = 0
+_DAY_START = time.time()
+_MAX_PER_IP_MIN = 10
+_MAX_PER_DAY = 100
+
+def _check_rate_limit(ip: str) -> bool:
+    """Check rate limit. Returns True if allowed, False if blocked."""
+    global _total_today, _DAY_START
+    now = time.time()
+    
+    # Reset daily counter every 24h
+    if now - _DAY_START > 86400:
+        _total_today = 0
+        _DAY_START = now
+    
+    # Daily limit
+    if _total_today >= _MAX_PER_DAY:
+        logger.warning(f"⚠️ Daily webhook limit reached ({_MAX_PER_DAY})")
+        return False
+    
+    # Per-IP rate limit (rolling 1 min window)
+    window = [t for t in _rate_limit_ip[ip] if now - t < 60]
+    _rate_limit_ip[ip] = window
+    if len(window) >= _MAX_PER_IP_MIN:
+        logger.warning(f"⚠️ Rate limit exceeded for IP {ip}")
+        return False
+    
+    _rate_limit_ip[ip].append(now)
+    _total_today += 1
+    return True
+
 # ─── Config ───
 KO_FI_VERIFICATION_TOKEN = os.getenv("KO_FI_VERIFICATION_TOKEN", "")
 
@@ -129,6 +167,12 @@ class KoFiHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length)
         
+        # Rate limit check on ALL POST endpoints
+        client_ip = self.client_address[0] if self.client_address else "unknown"
+        if not _check_rate_limit(client_ip):
+            self._respond(429, "Rate limit exceeded. Try again later.")
+            return
+        
         if path == "/subscribe":
             self._handle_subscribe(body)
             return
@@ -175,14 +219,29 @@ class KoFiHandler(BaseHTTPRequestHandler):
         from_name = data.get("from_name", email)
         timestamp = data.get("timestamp", datetime.now().isoformat())
         
-        logger.info(f"💰 Ko-fi payment received: {amount} {currency} from {from_name} ({email})")
+        # Sanitize user-supplied fields for HTML safety
+        safe_from = from_name.replace("<", "&lt;").replace(">", "&gt;")
+        safe_email = email.replace("<", "&lt;").replace(">", "&gt;")
+        
+        logger.info(f"💰 Ko-fi payment received: {amount} {currency} from {safe_from}")
+        
+        # Validate amount is a positive number
+        try:
+            amount_float = float(amount) if amount else 0
+            if amount_float <= 0:
+                logger.warning(f"⚠️ Invalid amount: {amount} {currency}")
+                self._respond(400, "Invalid payment amount")
+                return
+        except (ValueError, TypeError):
+            logger.warning(f"⚠️ Non-numeric amount: {amount}")
+            self._respond(400, "Invalid payment amount")
+            return
         
         # Try to extract Telegram user ID from message
         user_id = self._extract_user_id(message)
         
         if user_id:
             # Determine tier based on amount
-            amount_float = float(amount) if amount else 0
             days, tier = self._determine_tier(amount_float, currency)
             
             if days > 0:
@@ -198,7 +257,7 @@ class KoFiHandler(BaseHTTPRequestHandler):
                     f"⭐ Tier: {tier.upper()}\n"
                     f"📅 Duration: {days} days\n"
                     f"⏳ Expires: {expiry.strftime('%Y-%m-%d %H:%M UTC')}\n"
-                    f"💳 Source: Ko-fi ({from_name})\n\n"
+                    f"💳 Source: Ko-fi ({safe_from})\n\n"
                     f"Thank you for supporting GandiveBot! 🚀"
                 )
                 
@@ -342,8 +401,8 @@ class KoFiHandler(BaseHTTPRequestHandler):
 # ─── Main ───
 
 def main():
-    server = HTTPServer(("0.0.0.0", PORT), KoFiHandler)
-    logger.info(f"💰 Ko-fi webhook server running on http://0.0.0.0:{PORT}")
+    server = HTTPServer(("127.0.0.1", PORT), KoFiHandler)
+    logger.info(f"💰 Ko-fi webhook server running on http://127.0.0.1:{PORT} (localhost only)")
     logger.info(f"   Webhook endpoint: POST /kofi-webhook")
     logger.info(f"   Health check:      GET /")
     logger.info(f"")

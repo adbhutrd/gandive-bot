@@ -299,10 +299,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def main():
     port = int(os.getenv("DASHBOARD_PORT", "8000"))
-    server = HTTPServer(("0.0.0.0", port), DashboardHandler)
+    server = HTTPServer(("127.0.0.1", port), DashboardHandler)
     print(f"📊 GandiveBot Dashboard: http://localhost:{port}")
     print(f"   API: http://localhost:{port}/api/data")
-    print(f"   Admin: Set up a reverse proxy for public access")
+    print(f"   🔒 Dashboard is bound to localhost only — not exposed to internet")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
