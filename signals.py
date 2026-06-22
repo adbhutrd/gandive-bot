@@ -84,6 +84,7 @@ class Signal:
             "SELL": "🔴",
             "WHALE": "🐋",
             "MOMENTUM": "⚡",
+            "MARKET": "📊",
         }
         emoji = emoji_map.get(self.type, "📊")
 
@@ -787,6 +788,65 @@ def scan_pair(pair: str) -> List[Signal]:
     return signals
 
 
+def generate_market_summary(pairs: List[str] = None) -> Optional[Signal]:
+    """Generate a market summary signal when no specific setups are detected.
+    This ensures users always see SOMETHING when they run /signals."""
+    if pairs is None:
+        pairs = DEFAULT_PAIRS[:5]  # Check top 5
+
+    prices = {}
+    changes = {}
+    total_change = 0
+    pairs_checked = 0
+
+    for pair in pairs:
+        ticker = fetch_ticker(pair)
+        if ticker and ticker.get("price", 0) > 0:
+            prices[pair] = ticker["price"]
+            changes[pair] = ticker.get("change_24h", 0)
+            total_change += changes[pair]
+            pairs_checked += 1
+
+    if pairs_checked == 0:
+        return None
+
+    avg_change = total_change / pairs_checked
+
+    if abs(avg_change) < 0.5:
+        mood = "🟡 Sideways / Low volatility"
+        reason = f"Market is quiet. {pairs_checked}/{len(pairs)} pairs checked — no significant movements detected."
+        confidence = 30
+    elif avg_change > 0:
+        mood = "🟢 Mildly bullish"
+        reason = f"Market showing slight positive momentum (+{avg_change:.1f}% avg across {pairs_checked} pairs)."
+        confidence = 35
+    else:
+        mood = "🔴 Mildly bearish"
+        reason = f"Market showing slight negative momentum ({avg_change:.1f}% avg across {pairs_checked} pairs)."
+        confidence = 35
+
+    # Find the most moved pair
+    if changes:
+        top_pair = max(changes, key=lambda p: abs(changes[p]))
+        top_change = changes[top_pair]
+        arrow = "📈" if top_change > 0 else "📉"
+        reason += f"\n{arrow} Most active: {top_pair} ({top_change:+.1f}%)"
+
+    return Signal(
+        type="MARKET",
+        pair="MARKET",
+        price=prices.get(list(prices.keys())[0], 0) if prices else 0,
+        confidence=confidence,
+        reason=reason,
+        details={
+            "pairs_checked": pairs_checked,
+            "avg_change": round(avg_change, 2),
+        },
+        timestamp=time.time(),
+        source="market_summary",
+    )
+
+
 def scan_all_pairs(pairs: List[str] = None) -> List[Signal]:
     """Scan all configured pairs for signals."""
     if pairs is None:
@@ -802,6 +862,12 @@ def scan_all_pairs(pairs: List[str] = None) -> List[Signal]:
     # Sort by confidence (highest first)
     all_signals.sort(key=lambda s: s.confidence, reverse=True)
 
+    # If no signals found, generate a market summary so users always see something
+    if not all_signals:
+        summary = generate_market_summary(pairs[:5])
+        if summary:
+            all_signals.append(summary)
+
     return all_signals
 
 
@@ -810,7 +876,7 @@ def scan_all_pairs(pairs: List[str] = None) -> List[Signal]:
 CACHE_FILE = Path(__file__).parent / "signal_cache.json"
 
 def cache_signals(signals: List[Signal]):
-    """Cache latest signals to file."""
+    """Cache latest signals to file (always writes, even if empty)."""
     data = {
         "generated_at": time.time(),
         "signals": [asdict(s) for s in signals],
