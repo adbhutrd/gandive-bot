@@ -209,6 +209,7 @@ def cmd_help(chat_id: int, user_id: int):
         f"<b>ℹ️ Info:</b>\n"
         f"/start     — Welcome screen\n"
         f"/status    — Bot health & stats\n"
+        f"/myid      — Get your Telegram User ID (for payments)\n"
         f"/help      — This message\n"
     )
 
@@ -795,7 +796,16 @@ def handle_message(update: dict):
     logger.info(f"Command: {command} from user {user_id}")
 
     # ─── Public Commands ──────────────────────────────────────────
-    if command in ("/start", "/help"):
+    if command == "/myid":
+        telegram_send(chat_id, (
+            f"<b>Your Telegram User ID</b>\n\n"
+            f"<code>{user_id}</code>\n\n"
+            f"<i>Include this in your Ko-fi payment message like:</i>\n"
+            f"<code>ID: {user_id}</code>\n\n"
+            f"Premium activates automatically within seconds! 🚀"
+        ))
+
+    elif command in ("/start", "/help"):
         if command == "/start":
             cmd_start(chat_id, user_id, args)
         else:

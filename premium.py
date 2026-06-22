@@ -403,7 +403,10 @@ def get_subscribe_message() -> str:
 
     msg += f"\n\n<b>💳 Pay via Ko-fi:</b>\n"
     msg += f"{KO_FI_URL}\n\n"
-    msg += f"After payment, message me your transaction ID and I'll activate your premium instantly!"
+    msg += f"<b>⚡ Auto-Activation:</b> After payment, include your Telegram User ID in the message like:\n"
+    msg += f"<code>ID: YOUR_USER_ID</code>\n"
+    msg += f"Premium activates automatically within seconds!\n\n"
+    msg += f"<i>Don't know your User ID? Send /myid to @GandiveBot to find it.</i>"
 
     return msg
 
